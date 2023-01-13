@@ -68,6 +68,11 @@ type Order struct {
 	PaymentSuccessUrl string `json:"payment_success_url"`
 }
 
+type OrderResponse struct {
+	OrderID     string `json:"order_id"`
+	ReferenceID string `json:"reference_id"`
+}
+
 type OrderStatus struct {
 	Status string `json:"status"`
 }

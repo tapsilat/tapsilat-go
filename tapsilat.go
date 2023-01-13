@@ -16,7 +16,7 @@ type API struct {
 // NewAPI creates a new TapsilatAPI struct
 func NewAPI(token string) *API {
 	return &API{
-		EndPoint: "https://api.tapsilat.com",
+		EndPoint: "https://acquiring.tapsilat.com",
 		Token:    token,
 	}
 }
@@ -67,10 +67,10 @@ func (t *API) do(req *http.Request, response interface{}) error {
 	return json.NewDecoder(resp.Body).Decode(response)
 }
 
-func (t *API) CreateOrder(payload Order) (Order, error) {
-	var order Order
-	err := t.post("/order/create", payload, &order)
-	return order, err
+func (t *API) CreateOrder(payload Order) (OrderResponse, error) {
+	var response OrderResponse
+	err := t.post("/order/create", payload, &response)
+	return response, err
 }
 
 func (t *API) GetOrder(order_reference_id string) (Order, error) {
