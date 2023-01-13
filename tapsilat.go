@@ -3,6 +3,7 @@ package tapsilat
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"time"
 )
@@ -16,7 +17,7 @@ type API struct {
 // NewAPI creates a new TapsilatAPI struct
 func NewAPI(token string) *API {
 	return &API{
-		EndPoint: "https://acquiring.tapsilat.com",
+		EndPoint: "https://acquiring.tapsilat.com/api/v1",
 		Token:    token,
 	}
 }
@@ -63,8 +64,14 @@ func (t *API) do(req *http.Request, response interface{}) error {
 		return err
 	}
 	defer resp.Body.Close()
-
-	return json.NewDecoder(resp.Body).Decode(response)
+	body, _ := io.ReadAll(resp.Body)
+	decode := json.NewDecoder(bytes.NewReader(body))
+	decode.DisallowUnknownFields()
+	decode.UseNumber()
+	if err := decode.Decode(response); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (t *API) CreateOrder(payload Order) (OrderResponse, error) {
@@ -73,10 +80,10 @@ func (t *API) CreateOrder(payload Order) (OrderResponse, error) {
 	return response, err
 }
 
-func (t *API) GetOrder(order_reference_id string) (Order, error) {
-	var order Order
-	err := t.get("/order/"+order_reference_id, nil, &order)
-	return order, err
+func (t *API) GetOrder(order_reference_id string) (OrderDetail, error) {
+	var response OrderDetail
+	err := t.get("/order/"+order_reference_id, nil, &response)
+	return response, err
 }
 
 func (t *API) GetOrders(page, per_page string) (PaginatedData, error) {

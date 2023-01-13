@@ -1,9 +1,9 @@
 package tapsilat
 
 type Order struct {
-	Locale            string               `json:"locale" binding:"required"`
-	Amount            float64              `json:"amount" binding:"required"`
-	Currency          string               `json:"currency" binding:"required"`
+	Locale            string               `json:"locale"`
+	Amount            float64              `json:"amount"`
+	Currency          string               `json:"currency"`
 	ConservationID    string               `json:"conservation_id"`
 	Buyer             OrderBuyer           `json:"buyer"`
 	ShippingAddress   OrderShippingAddress `json:"shipping_address"`
@@ -14,6 +14,20 @@ type Order struct {
 	PaymentMethods    bool                 `json:"payment_methods"`
 	PaymentFailureUrl string               `json:"payment_failure_url"`
 	PaymentSuccessUrl string               `json:"payment_success_url"`
+}
+
+type OrderDetail struct {
+	Locale          string               `json:"locale"`
+	ReferenceID     string               `json:"reference_id"`
+	Amount          string               `json:"amount"`
+	CreatedAt       string               `json:"created_at"`
+	Currency        string               `json:"currency"`
+	Status          int32                `json:"status"`
+	Buyer           OrderBuyer           `json:"buyer"`
+	ShippingAddress OrderShippingAddress `json:"shipping_address"`
+	BillingAddress  OrderBillingAddress  `json:"billing_address"`
+	BasketItems     []OrderBasketItem    `json:"basket_items"`
+	Submerchants    []OrderSubmerchant   `json:"submerchants"`
 }
 
 type OrderBuyer struct {
@@ -90,12 +104,12 @@ type OrderStatus struct {
 }
 
 type RefundOrder struct {
-	ReferenceID string `json:"reference_id" binding:"required"`
-	Amount      string `json:"amount" binding:"required"`
+	ReferenceID string `json:"reference_id"`
+	Amount      string `json:"amount"`
 }
 
 type CancelOrder struct {
-	ReferenceID string `json:"reference_id" binding:"required"`
+	ReferenceID string `json:"reference_id"`
 }
 
 type RefundCancelOrderResponse struct {
