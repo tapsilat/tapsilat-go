@@ -8,7 +8,7 @@ type Order struct {
 	Buyer             OrderBuyer           `json:"buyer"`
 	ShippingAddress   OrderShippingAddress `json:"shipping_address"`
 	BillingAddress    OrderBillingAddress  `json:"billing_address"`
-	BasketItems       []OrderBaseketItem   `json:"basket_items"`
+	BasketItems       []OrderBasketItem    `json:"basket_items"`
 	Submerchants      []OrderSubmerchant   `json:"submerchants"`
 	CheckoutDesign    OrderCheckoutDesign  `json:"checkout_design"`
 	PaymentMethods    bool                 `json:"payment_methods"`
@@ -42,7 +42,7 @@ type OrderShippingAddress struct {
 	TrackingCode string `json:"tracking_code"`
 }
 
-type OrderBaseketItem struct {
+type OrderBasketItem struct {
 	Id               string  `json:"id"`
 	Price            float32 `json:"price"`
 	Name             string  `json:"name"`
