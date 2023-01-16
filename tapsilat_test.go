@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/tapsilat/tapsilat-go-sdk"
+	"github.com/tapsilat/tapsilat-go"
 )
 
 func TestCreateOrder(t *testing.T) {

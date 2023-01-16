@@ -1,3 +1,3 @@
-module github.com/tapsilat/tapsilat-go-sdk
+module github.com/tapsilat/tapsilat-go
 
 go 1.19
