@@ -16,7 +16,7 @@ If you have self-hosted Tapsilat, you need use the `tapsilat.NewCustomAPI()` fun
 ```go
 package main
 
-import "github.com/tapsilat/tapsilat-go-sdk"
+import "github.com/tapsilat/tapsilat-go"
 
 func main() {
 	token := "TOKEN"
@@ -27,7 +27,7 @@ func main() {
 ```go
 package main
 
-import "github.com/tapsilat/tapsilat-go-sdk"
+import "github.com/tapsilat/tapsilat-go"
 
 func main() {
 	token := "TOKEN"
@@ -42,7 +42,7 @@ func main() {
 ```go
 package main
 
-import "github.com/tapsilat/tapsilat-go-sdk"
+import "github.com/tapsilat/tapsilat-go"
 
 func main() {
 	token := "TOKEN"
@@ -115,7 +115,7 @@ func main() {
 ```go
 package main
 
-import "github.com/tapsilat/tapsilat-go-sdk"
+import "github.com/tapsilat/tapsilat-go"
 
 func main() {
 	token := "TOKEN"
@@ -134,7 +134,7 @@ func main() {
 ```go
 package main
 
-import "github.com/tapsilat/tapsilat-go-sdk"
+import "github.com/tapsilat/tapsilat-go"
 
 func main() {
 	token := "TOKEN"
@@ -153,7 +153,7 @@ func main() {
 ```go
 package main
 
-import "github.com/tapsilat/tapsilat-go-sdk"
+import "github.com/tapsilat/tapsilat-go"
 
 func main() {
 	token := "TOKEN"
@@ -172,7 +172,7 @@ func main() {
 ```go
 package main
 
-import "github.com/tapsilat/tapsilat-go-sdk"
+import "github.com/tapsilat/tapsilat-go"
 
 func main() {
 	token := "TOKEN"
@@ -194,7 +194,7 @@ func main() {
 ```go
 package main
 
-import "github.com/tapsilat/tapsilat-go-sdk"
+import "github.com/tapsilat/tapsilat-go"
 
 func main() {
 	token := "TOKEN"
