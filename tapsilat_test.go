@@ -11,9 +11,10 @@ func TestCreateOrder(t *testing.T) {
 	token := os.Getenv("TAPSILAT_TOKEN")
 	api := tapsilat.NewAPI(token)
 	order := tapsilat.Order{
-		Locale:   "tr",
-		Currency: "TRY",
-		Amount:   5,
+		Locale:    "tr",
+		Currency:  "TRY",
+		Amount:    5,
+		TaxAmount: 0.18,
 		Buyer: tapsilat.OrderBuyer{
 			Id:                  "123456789",
 			Name:                "John",

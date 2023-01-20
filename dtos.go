@@ -3,6 +3,7 @@ package tapsilat
 type Order struct {
 	Locale            string               `json:"locale"`
 	Amount            float64              `json:"amount"`
+	TaxAmount         float64              `json:"tax_amount"`
 	Currency          string               `json:"currency"`
 	ConservationID    string               `json:"conservation_id"`
 	Buyer             OrderBuyer           `json:"buyer"`
