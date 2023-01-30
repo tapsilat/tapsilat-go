@@ -5,7 +5,7 @@ type Order struct {
 	Amount            float64              `json:"amount"`
 	TaxAmount         float64              `json:"tax_amount"`
 	Currency          string               `json:"currency"`
-	ConservationID    string               `json:"conservation_id"`
+	ConversationID    string               `json:"conversation_id"`
 	Buyer             OrderBuyer           `json:"buyer"`
 	ShippingAddress   OrderShippingAddress `json:"shipping_address"`
 	BillingAddress    OrderBillingAddress  `json:"billing_address"`
