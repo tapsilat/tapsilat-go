@@ -5,7 +5,7 @@ You can create an order, get order, get order list, get order status, cancel ord
 ## Installation
 
 ```bash
-go get github.com/tapsilat/tapsilat-go
+go get github.com/tapsilat/tapsilat-go@main
 ```
 
 ## Usage
