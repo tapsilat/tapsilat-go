@@ -59,7 +59,7 @@ type OrderShippingAddress struct {
 
 type OrderBasketItem struct {
 	Id               string  `json:"id"`
-	Price            float32 `json:"price"`
+	Price            float64 `json:"price"`
 	Name             string  `json:"name"`
 	Category1        string  `json:"category1"`
 	Category2        string  `json:"category2"`
@@ -69,7 +69,7 @@ type OrderBasketItem struct {
 }
 
 type OrderSubmerchant struct {
-	Amount              float32 `json:"amount"`
+	Amount              float64 `json:"amount"`
 	OrderBasketItemID   string  `json:"order_basket_item_id"`
 	MerchantReferenceID string  `json:"merchant_reference_id"`
 }
