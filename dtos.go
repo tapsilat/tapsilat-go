@@ -1,5 +1,31 @@
 package tapsilat
 
+var OrderStatuesMap = []struct {
+	Id     int
+	Status string
+}{
+	{1, "Received"},
+	{2, "Unpaid"},
+	{3, "Paid"},
+	{4, "Processing"},
+	{5, "Shipped"},
+	{6, "On hold"},
+	{7, "Waiting for payment"},
+	{8, "Cancelled"},
+	{9, "Completed"},
+	{10, "Refunded"},
+	{11, "Fraud"},
+	{12, "Rejected"},
+	{13, "Failure"},
+	{14, "Retrying"},
+	{15, "Partially refunded"},
+	{16, "Sub merchant payment approved"},
+	{17, "Sub merchant payment disapproved"},
+	{18, "Sub merchant payment errored"},
+	{19, "Still has unpaid installments"},
+	{20, "Still has unpaid terms"},
+}
+
 type Order struct {
 	Locale            string               `json:"locale"`
 	Amount            float64              `json:"amount"`
