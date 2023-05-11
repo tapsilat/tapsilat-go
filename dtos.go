@@ -84,14 +84,17 @@ type OrderShippingAddress struct {
 }
 
 type OrderBasketItem struct {
-	Id               string  `json:"id"`
-	Price            float64 `json:"price"`
-	Name             string  `json:"name"`
-	Category1        string  `json:"category1"`
-	Category2        string  `json:"category2"`
-	ItemType         string  `json:"item_type"`
-	SubMerchantKey   string  `json:"sub_merchant_key"`
-	SubMerchantPrice string  `json:"sub_merchant_price"`
+	Id               string  `json:"id" example:"BI101"`
+	Price            float32 `json:"price" example:"0.3"`
+	Quantity         uint64  `json:"quantity" example:"1"`
+	Name             string  `json:"name" example:"Binocular"`
+	Category1        string  `json:"category1" example:"Collectibles"`
+	Category2        string  `json:"category2" example:"Accessories"`
+	ItemType         string  `json:"item_type" example:"PHYSICAL"`
+	SubMerchantKey   string  `json:"sub_merchant_key" example:"sub merchant key"`
+	SubMerchantPrice string  `json:"sub_merchant_price" example:"0.27"`
+	Coupon           string  `json:"coupon" example:"coupon"`
+	CouponDiscount   float64 `json:"coupon_discount" example:"0.1"`
 }
 
 type OrderSubmerchant struct {
