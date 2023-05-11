@@ -124,25 +124,30 @@ type OrderBillingAddress struct {
 type OrderResponse struct {
 	OrderID     string `json:"order_id"`
 	ReferenceID string `json:"reference_id"`
+	Error       string `json:"error"`
 }
 
 type OrderStatus struct {
 	Status string `json:"status"`
+	Error  string `json:"error"`
 }
 
 type RefundOrder struct {
 	ReferenceID string `json:"reference_id"`
 	Amount      string `json:"amount"`
+	Error       string `json:"error"`
 }
 
 type CancelOrder struct {
 	ReferenceID string `json:"reference_id"`
+	Error       string `json:"error"`
 }
 
 type RefundCancelOrderResponse struct {
 	Status    string `json:"status"`
 	Message   string `json:"message"`
 	IsSuccess bool   `json:"is_success"`
+	Error     string `json:"error"`
 }
 
 type PaginatedData struct {
@@ -151,4 +156,5 @@ type PaginatedData struct {
 	Total      int64       `json:"total,omitempty" example:"100"`
 	TotalPages int         `json:"total_pages,omitempty" example:"10"`
 	Rows       interface{} `json:"rows,omitempty" swaggertype:"array,string" example:"object,object2"`
+	Error      string      `json:"error"`
 }
