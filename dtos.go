@@ -85,7 +85,7 @@ type OrderShippingAddress struct {
 
 type OrderBasketItem struct {
 	Id               string  `json:"id" example:"BI101"`
-	Price            float32 `json:"price" example:"0.3"`
+	Price            float64 `json:"price" example:"0.3"`
 	Quantity         uint64  `json:"quantity" example:"1"`
 	Name             string  `json:"name" example:"Binocular"`
 	Category1        string  `json:"category1" example:"Collectibles"`
