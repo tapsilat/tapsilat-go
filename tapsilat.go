@@ -86,9 +86,9 @@ func (t *API) GetOrder(order_reference_id string) (OrderDetail, error) {
 	return response, err
 }
 
-func (t *API) GetOrders(page, per_page string) (PaginatedData, error) {
+func (t *API) GetOrders(page, per_page, buyer_id string) (PaginatedData, error) {
 	var response PaginatedData
-	err := t.get("/order/list?page="+page+"&per_page="+per_page, nil, &response)
+	err := t.get("/order/list?page="+page+"&per_page="+per_page+"&buyer_id="+buyer_id, nil, &response)
 	return response, err
 }
 
