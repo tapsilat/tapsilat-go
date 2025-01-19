@@ -1,5 +1,7 @@
 package tapsilat
 
+import "time"
+
 var OrderStatuesMap = []struct {
 	Id     int
 	Status string
@@ -44,19 +46,58 @@ type Order struct {
 }
 
 type OrderDetail struct {
-	Locale          string               `json:"locale"`
-	ReferenceID     string               `json:"reference_id"`
-	Amount          string               `json:"amount"`
-	CreatedAt       string               `json:"created_at"`
-	Currency        string               `json:"currency"`
-	Status          int32                `json:"status"`
-	Buyer           OrderBuyer           `json:"buyer"`
-	ShippingAddress OrderShippingAddress `json:"shipping_address"`
-	BillingAddress  OrderBillingAddress  `json:"billing_address"`
-	BasketItems     []OrderBasketItem    `json:"basket_items"`
-	Submerchants    []OrderSubmerchant   `json:"submerchants"`
+	Locale            string                 `json:"locale"`
+	Error             string                 `json:"error"`
+	Code              int                    `json:"code"`
+	ReferenceID       string                 `json:"reference_id"`
+	Amount            string                 `json:"amount"`
+	Total             string                 `json:"total"`
+	PaidAmount        string                 `json:"paid_amount"`
+	RefundedAmount    string                 `json:"refunded_amount"`
+	CreatedAt         string                 `json:"created_at"`
+	Currency          string                 `json:"currency"`
+	Status            int32                  `json:"status"`
+	StatusEnum        string                 `json:"status_enum"`
+	Buyer             OrderBuyer             `json:"buyer"`
+	ShippingAddress   OrderShippingAddress   `json:"shipping_address"`
+	CheckoutDesign    OrderCheckoutDesignDTO `json:"checkout_design"`
+	BillingAddress    OrderBillingAddress    `json:"billing_address"`
+	BasketItems       []OrderBasketItem      `json:"basket_items"`
+	Submerchants      []OrderSubmerchant     `json:"submerchants"`
+	PaymentTerms      []OrderPaymentTermDTO  `json:"payment_terms"`
+	ItemPayments      []OrderItemPayment     `json:"item_payments"`
+	PaymentFailureUrl string                 `json:"payment_failure_url" example:"https://www.example.com/payment/failure"`
+	PaymentSuccessUrl string                 `json:"payment_success_url" example:"https://www.example.com/payment/success"`
+	CheckoutURL       string                 `json:"checkout_url" example:"https://www.example.com/payment/checkout"`
+	ConversationID    string                 `json:"conversation_id" example:"123456789"`
+	PaymentOptions    []string               `json:"payment_options" example:"credit_card,bank_transfer,cash"`
 }
-
+type OrderPaymentTermDTO struct {
+	ID              string             `json:"id" example:"123456789"`
+	HashID          string             `json:"hash_id" example:"123456789"`
+	TermSequence    uint64             `json:"term_sequence" example:"1"`
+	Required        bool               `json:"required" example:"true"`
+	DueDate         time.Time          `json:"due_date" example:"2019-01-01 00:00:00"`
+	PaidDate        time.Time          `json:"paid_date" example:"2019-01-01 00:00:00"`
+	Amount          float64            `json:"amount" example:"100.00"`
+	TermReferenceID string             `json:"term_reference_id" example:"41f8fce7-71a7-4d55-a603-6a4bd2f30d07"`
+	Status          string             `json:"status" example:"pending"`
+	Payments        []OrderTermPayment `json:"payments"`
+	Data            string             `json:"data" example:"data"`
+} // @name OrderPaymentTermDTO
+type OrderTermPayment struct {
+	Id               string  `json:"id,omitempty"`
+	TermID           string  `json:"term_id,omitempty"`
+	Amount           float64 `json:"amount,omitempty"`
+	PaidDate         string  `json:"paid_date,omitempty"`
+	MaskedBin        string  `json:"masked_bin,omitempty"`
+	CardBrand        string  `json:"card_brand,omitempty"`
+	RefundedAmount   float64 `json:"refunded_amount,omitempty"`
+	RefundableAmount float64 `json:"refundable_amount,omitempty"`
+	Refunded         bool    `json:"refunded,omitempty"`
+	Status           uint64  `json:"status,omitempty" example:"1"`
+	Type             uint64  `json:"type,omitempty" example:"1"` //  Credit Card,  Bank Transfer etc.
+} //
 type OrderBuyer struct {
 	Id                  string `json:"id"`
 	Name                string `json:"name"`
@@ -81,20 +122,24 @@ type OrderShippingAddress struct {
 	Country      string `json:"country"`
 	ContactName  string `json:"contact_name"`
 	TrackingCode string `json:"tracking_code"`
+	ShippingDate string `json:"shipping_date" example:"2019-01-01 00:00:00"`
 }
 
 type OrderBasketItem struct {
-	Id               string  `json:"id" example:"BI101"`
-	Price            float64 `json:"price" example:"0.3"`
-	Quantity         uint64  `json:"quantity" example:"1"`
-	Name             string  `json:"name" example:"Binocular"`
-	Category1        string  `json:"category1" example:"Collectibles"`
-	Category2        string  `json:"category2" example:"Accessories"`
-	ItemType         string  `json:"item_type" example:"PHYSICAL"`
-	SubMerchantKey   string  `json:"sub_merchant_key" example:"sub merchant key"`
-	SubMerchantPrice string  `json:"sub_merchant_price" example:"0.27"`
-	Coupon           string  `json:"coupon" example:"coupon"`
-	CouponDiscount   float64 `json:"coupon_discount" example:"0.1"`
+	Id               string             `json:"id" example:"123456789"`
+	Price            float64            `json:"price" example:"100.00"`
+	Name             string             `json:"name" example:"Product Name"`
+	Category1        string             `json:"category1" example:"Category 1"`
+	Category2        string             `json:"category2" example:"Category 2"`
+	ItemType         string             `json:"item_type" example:"PHYSICAL"`
+	Status           uint64             `json:"status" example:"1"`
+	RefundedAmount   float64            `json:"refunded_amount" example:"0.00"`
+	RefundableAmount float64            `json:"refundable_amount" example:"0.00"`
+	PaidAmount       float64            `json:"paid_amount" example:"0.00"`
+	PaidableAmount   float64            `json:"paidable_amount" example:"0.00"`
+	Coupon           string             `json:"coupon" example:"coupon"`
+	CouponDiscount   float64            `json:"coupon_discount" example:"0.00"`
+	ItemPayments     []OrderItemPayment `json:"item_payments"`
 }
 
 type OrderSubmerchant struct {
@@ -115,13 +160,31 @@ type OrderCheckoutDesign struct {
 	OrderDetailHtml      string `json:"order_detail_html"`
 	RedirectUrl          string `json:"redirect_url"`
 }
+type OrderItemPayment struct {
+	Id               string  `json:"id,omitempty"`
+	Amount           float64 `json:"amount,omitempty"`
+	PaidDate         string  `json:"paid_date,omitempty"`
+	MaskedBin        string  `json:"masked_bin,omitempty"`
+	CardBrand        string  `json:"card_brand,omitempty"`
+	RefundedAmount   float64 `json:"refunded_amount,omitempty"`
+	RefundableAmount float64 `json:"refundable_amount,omitempty"`
+	Refunded         bool    `json:"refunded,omitempty"`
+	Status           uint64  `json:"status,omitempty" example:"1"`
+} // @name OrderItemPayment
 
 type OrderBillingAddress struct {
-	Address     string `json:"address"`
-	ZipCode     string `json:"zip_code"`
-	City        string `json:"city"`
-	Country     string `json:"country"`
-	ContactName string `json:"contact_name"`
+	BillingType  string `json:"billing_type" example:"PERSONAL"`   // PERSONAL, BUSINESS
+	Citizenship  string `json:"citizenship" example:"TR"`          // ISO 3166-1 alpha-2 country code
+	Title        string `json:"title" example:"MonoPayments Inc."` // Legal title
+	TaxOffice    string `json:"tax_office" example:"Merter"`
+	Address      string `json:"address" example:"Istanbul"`
+	ZipCode      string `json:"zip_code" example:"34000"`
+	City         string `json:"city" example:"Istanbul"`
+	District     string `json:"district" example:"Uskudar"`
+	Country      string `json:"country" example:"Turkey"`
+	ContactName  string `json:"contact_name" example:"John Doe"`
+	ContactPhone string `json:"contact_phone" example:"+905555555555"`
+	VatNumber    string `json:"vat_number" example:"1234567890"` // Identification number if billing type is PERSONAL
 }
 
 type OrderResponse struct {
@@ -161,3 +224,14 @@ type PaginatedData struct {
 	Rows       interface{} `json:"rows,omitempty" swaggertype:"array,string" example:"object,object2"`
 	Error      string      `json:"error"`
 }
+type OrderCheckoutDesignDTO struct {
+	Logo                 string `json:"logo" example:"https://www.example.com/logo.png"`
+	InputBackgroundColor string `json:"input_background_color" example:"#ffffff"`
+	InputTextColor       string `json:"input_text_color" example:"#000000"`
+	LabelTextColor       string `json:"label_text_color" example:"#000000"`
+	LeftBackgroundColor  string `json:"left_background_color" example:"#ffffff"`
+	RightBackgroundColor string `json:"right_background_color" example:"#ffffff"`
+	TextColor            string `json:"text_color" example:"#000000"`
+	PlaceholderColor     string `json:"placeholder_color" example:"#000000"`
+	OrderDetailHtml      string `json:"order_detail_html" example:"<html><body><h1>Order Detail</h1></body></html>"`
+} // @name OrderCheckoutDesignDTO
