@@ -43,6 +43,20 @@ type Order struct {
 	PaymentMethods    bool                 `json:"payment_methods"`
 	PaymentFailureUrl string               `json:"payment_failure_url"`
 	PaymentSuccessUrl string               `json:"payment_success_url"`
+	PfSubMerchant     OrderPfSubMerchant   `json:"pf_sub_merchant"`
+	ThreeDForce       bool                 `json:"three_d_force"`
+}
+type OrderPfSubMerchant struct {
+	Address        string `json:"address"`
+	City           string `json:"city"`
+	Country        string `json:"country"`
+	CountryISOCode string `json:"country_iso_code"`
+	ID             string `json:"id"`
+	MCC            string `json:"mcc"`
+	Name           string `json:"name"`
+	OrgID          string `json:"org_id"`
+	PostalCode     string `json:"postal_code"`
+	TerminalNo     string `json:"terminal_no"`
 }
 
 type OrderDetail struct {
