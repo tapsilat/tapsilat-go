@@ -45,7 +45,7 @@ func (t *API) post(path string, payload any, response any) error {
 	return t.do(req, response)
 }
 
-func (t *API) get(path string, payload any, response any) error {
+func (t *API) get(path string, response any) error {
 	url := t.EndPoint + path
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -82,19 +82,19 @@ func (t *API) CreateOrder(payload Order) (OrderResponse, error) {
 
 func (t *API) GetOrder(order_reference_id string) (OrderDetail, error) {
 	var response OrderDetail
-	err := t.get("/order/"+order_reference_id, nil, &response)
+	err := t.get("/order/"+order_reference_id, &response)
 	return response, err
 }
 
 func (t *API) GetOrders(page, per_page, buyer_id string) (PaginatedData, error) {
 	var response PaginatedData
-	err := t.get("/order/list?page="+page+"&per_page="+per_page+"&buyer_id="+buyer_id, nil, &response)
+	err := t.get("/order/list?page="+page+"&per_page="+per_page+"&buyer_id="+buyer_id, &response)
 	return response, err
 }
 
 func (t *API) GetOrderStatus(order_reference_id string) (OrderStatus, error) {
 	var orderStatus OrderStatus
-	err := t.get("/order/"+order_reference_id+"/status", nil, &orderStatus)
+	err := t.get("/order/"+order_reference_id+"/status", &orderStatus)
 	return orderStatus, err
 }
 
