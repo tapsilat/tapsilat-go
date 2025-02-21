@@ -30,7 +30,7 @@ func NewCustomAPI(endpoint, token string) *API {
 	}
 }
 
-func (t *API) post(path string, payload interface{}, response interface{}) error {
+func (t *API) post(path string, payload any, response any) error {
 	url := t.EndPoint + path
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
@@ -45,7 +45,7 @@ func (t *API) post(path string, payload interface{}, response interface{}) error
 	return t.do(req, response)
 }
 
-func (t *API) get(path string, payload interface{}, response interface{}) error {
+func (t *API) get(path string, payload any, response any) error {
 	url := t.EndPoint + path
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -54,7 +54,7 @@ func (t *API) get(path string, payload interface{}, response interface{}) error 
 	return t.do(req, response)
 }
 
-func (t *API) do(req *http.Request, response interface{}) error {
+func (t *API) do(req *http.Request, response any) error {
 	req.Header.Set("Authorization", "Bearer "+t.Token)
 	client := &http.Client{
 		Timeout: 30 * time.Second,
