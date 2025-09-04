@@ -300,5 +300,3 @@ if err != nil {
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-Tapsilat Go is a Go client library for accessing the Tapsilat API. It provides convenient access to Tapsilat's API from applications written in the Go language.
-You can create an order, get order, get order list, get order status, cancel order and refund order.
