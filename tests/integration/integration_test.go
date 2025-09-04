@@ -1,14 +1,20 @@
-package tapsilat_test
+package integration_test
 
 import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tapsilat/tapsilat-go"
 )
 
 func TestCreateOrder(t *testing.T) {
 	token := os.Getenv("TAPSILAT_TOKEN")
+	if token == "" {
+		t.Skip("TAPSILAT_TOKEN environment variable not set, skipping integration test")
+	}
+
 	api := tapsilat.NewAPI(token)
 	order := tapsilat.Order{
 		Locale:    "tr",
@@ -66,51 +72,45 @@ func TestCreateOrder(t *testing.T) {
 		},
 	}
 	response, err := api.CreateOrder(order)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err, "CreateOrder should not return an error")
 
-	if response.ReferenceID == "" {
-		t.Error("ReferenceID is empty")
-	}
-	if response.OrderID == "" {
-		t.Error("OrderID is empty")
-	}
+	assert.NotEmpty(t, response.ReferenceID, "ReferenceID should not be empty")
+	assert.NotEmpty(t, response.OrderID, "OrderID should not be empty")
+	assert.NotEmpty(t, response.CheckoutURL, "CheckoutURL should not be empty")
 
+	t.Logf("Order created - ID: %s, Reference: %s, CheckoutURL: %s", response.OrderID, response.ReferenceID, response.CheckoutURL)
 }
 
 func TestGetOrder(t *testing.T) {
 	token := os.Getenv("TAPSILAT_TOKEN")
+	if token == "" {
+		t.Skip("TAPSILAT_TOKEN environment variable not set, skipping integration test")
+	}
+
 	api := tapsilat.NewAPI(token)
 
 	order, err := api.GetOrder("e0176c98-fb41-4f08-aa03-55bb8d7bb9d6")
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err, "GetOrder should not return an error")
 
-	if order.Locale == "" {
-		t.Error("Locale is empty")
-	}
-	if order.Currency == "" {
-		t.Error("Currency is empty")
-	}
-
+	assert.NotEmpty(t, order.Locale, "Locale should not be empty")
+	assert.NotEmpty(t, order.Currency, "Currency should not be empty")
 }
 
 func TestGetOrderStatus(t *testing.T) {
 	token := os.Getenv("TAPSILAT_TOKEN")
+	if token == "" {
+		t.Skip("TAPSILAT_TOKEN environment variable not set, skipping integration test")
+	}
+
 	api := tapsilat.NewAPI(token)
 
 	order, err := api.GetOrderStatus("e0176c98-fb41-4f08-aa03-55bb8d7bb9d6")
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err, "GetOrderStatus should not return an error")
 
-	if order.Status == "" {
-		t.Error("Status is can not be empty")
-	}
+	assert.NotEmpty(t, order.Status, "Status should not be empty")
+
 	if order.Status == "Waiting For Payment" {
-		t.Log("Waiting For Payment")
+		t.Log("Status: Waiting For Payment")
 	}
-	t.Log("status", order.Status)
+	t.Logf("Status: %s", order.Status)
 }
