@@ -1,7 +1,6 @@
 package integration_test
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,9 +9,11 @@ import (
 )
 
 func TestCreateOrder(t *testing.T) {
-	token := os.Getenv("TAPSILAT_TOKEN")
-	if token == "" {
-		t.Skip("TAPSILAT_TOKEN environment variable not set, skipping integration test")
+	// Integration testler için gerçek bir token gerekiyor
+	// Bu test sadece gerçek token ile çalışır
+	token := "your_test_token_here"
+	if token == "your_test_token_here" {
+		t.Skip("Please set a real token for integration tests")
 	}
 
 	api := tapsilat.NewAPI(token)
@@ -82,9 +83,10 @@ func TestCreateOrder(t *testing.T) {
 }
 
 func TestGetOrder(t *testing.T) {
-	token := os.Getenv("TAPSILAT_TOKEN")
-	if token == "" {
-		t.Skip("TAPSILAT_TOKEN environment variable not set, skipping integration test")
+	// Integration testler için gerçek bir token gerekiyor
+	token := "your_test_token_here"
+	if token == "your_test_token_here" {
+		t.Skip("Please set a real token for integration tests")
 	}
 
 	api := tapsilat.NewAPI(token)
@@ -97,9 +99,10 @@ func TestGetOrder(t *testing.T) {
 }
 
 func TestGetOrderStatus(t *testing.T) {
-	token := os.Getenv("TAPSILAT_TOKEN")
-	if token == "" {
-		t.Skip("TAPSILAT_TOKEN environment variable not set, skipping integration test")
+	// Integration testler için gerçek bir token gerekiyor
+	token := "your_test_token_here"
+	if token == "your_test_token_here" {
+		t.Skip("Please set a real token for integration tests")
 	}
 
 	api := tapsilat.NewAPI(token)

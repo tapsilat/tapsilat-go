@@ -10,16 +10,6 @@ go get github.com/tapsilat/tapsilat-go
 
 ## Configuration
 
-### Environment Variables
-
-Create a `.env` file in your project root:
-
-```env
-TAPSILAT_TOKEN=your_api_token_here
-```
-
-### Programmatic Configuration
-
 ```go
 package main
 
@@ -28,10 +18,7 @@ import (
 )
 
 func main() {
-    // Using environment variables
-    api := tapsilat.NewAPIFromEnv()
-
-    // Or with explicit token
+    // Create API client with your token
     api := tapsilat.NewAPI("your_token_here")
 
     // Or with custom endpoint

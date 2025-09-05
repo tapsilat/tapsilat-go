@@ -6,10 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"time"
-
-	"github.com/joho/godotenv"
 )
 
 // TapsilatAPI is the main struct for the Tapsilat API
@@ -19,34 +16,16 @@ type API struct {
 	Timeout  time.Duration
 }
 
-// NewAPI creates a new TapsilatAPI struct with environment variable support
+// NewAPI creates a new TapsilatAPI struct
 func NewAPI(token string) *API {
-	// Load .env file if it exists
-	_ = godotenv.Load()
-
-	// Use provided token or fall back to environment variable
-	if token == "" {
-		token = os.Getenv("TAPSILAT_TOKEN")
-	}
-
-	endpoint := os.Getenv("TAPSILAT_BASE_URL")
-	if endpoint == "" {
-		endpoint = "https://acquiring.tapsilat.com/api/v1"
-	}
-
 	return &API{
-		EndPoint: endpoint,
+		EndPoint: "https://acquiring.tapsilat.com/api/v1",
 		Token:    token,
 		Timeout:  30 * time.Second,
 	}
 }
 
-// NewAPIFromEnv creates a new API instance using only environment variables
-func NewAPIFromEnv() *API {
-	return NewAPI("")
-}
-
-// NewAPIWithEndpoint creates a new TapsilatAPI struct with a custom endpoint
+// NewCustomAPI creates a new TapsilatAPI struct with a custom endpoint
 func NewCustomAPI(endpoint, token string) *API {
 	return &API{
 		EndPoint: endpoint,

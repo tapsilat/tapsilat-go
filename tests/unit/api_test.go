@@ -26,15 +26,6 @@ func TestAPICreation(t *testing.T) {
 		assert.Equal(t, customEndpoint, api.EndPoint)
 		assert.NotZero(t, api.Timeout)
 	})
-
-	t.Run("NewAPIFromEnv", func(t *testing.T) {
-		// This test would work if environment variables are set
-		api := tapsilat.NewAPIFromEnv()
-
-		assert.NotNil(t, api)
-		assert.NotZero(t, api.Timeout)
-		// Token might be empty if env var is not set, which is fine for this test
-	})
 }
 
 func TestOrderStatusMap(t *testing.T) {

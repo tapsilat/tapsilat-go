@@ -3,14 +3,14 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/tapsilat/tapsilat-go"
 )
 
 func main() {
-	// API client oluşturma - environment variable'dan token alıyor
-	api := tapsilat.NewAPIFromEnv()
+	// API client oluşturma - token direkt verilmeli
+	token := "your_token_here"
+	api := tapsilat.NewAPI(token)
 
 	// Eğer token yoksa hata veriyor
 	if api.Token == "" {
@@ -279,12 +279,5 @@ func runValidationExamples() {
 		} else {
 			fmt.Printf("  ✅ %s -> %v\n", installmentStr, installments)
 		}
-	}
-}
-
-func init() {
-	// .env dosyasından environment variable'ları yükle
-	if _, err := os.Stat(".env"); err == nil {
-		fmt.Println("Loading environment variables from .env file")
 	}
 }

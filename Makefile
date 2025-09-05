@@ -15,7 +15,7 @@ test-unit: ## Run unit tests only
 	@echo "Running unit tests..."
 	go test -v ./tests/unit/...
 
-test-integration: ## Run integration tests only (requires TAPSILAT_TOKEN env var)
+test-integration: ## Run integration tests only (requires real token in test files)
 	@echo "Running integration tests..."
 	go test -v ./tests/integration/...
 
@@ -62,15 +62,6 @@ deps: ## Download dependencies
 	go mod download
 	go mod tidy
 
-# Integration test with environment check
-test-integration-check: ## Run integration tests with environment variable check
-	@if [ -z "$(TAPSILAT_TOKEN)" ]; then \
-		echo "Warning: TAPSILAT_TOKEN environment variable not set. Integration tests will be skipped."; \
-		echo "To run integration tests, set TAPSILAT_TOKEN environment variable."; \
-		echo "Example: export TAPSILAT_TOKEN=your_token_here"; \
-	fi
-	go test -v ./tests/integration/...
-
 # Quick test run without verbose output
 test-quick: ## Run tests quickly without verbose output
 	go test ./tests/unit/... ./tests/integration/...
@@ -85,13 +76,10 @@ test-installments: ## Test installment validation specifically
 # Development helpers
 dev-setup: deps ## Setup development environment
 	@echo "Setting up development environment..."
-	@if [ ! -f .env ]; then \
-		cp .env.example .env; \
-		echo "Created .env file from .env.example. Please update with your credentials."; \
-	fi
+	@echo "Development environment ready. Update test files with real tokens for integration tests."
 
 # Example test with real API (use with caution)
-test-create-order: ## Test order creation with real API (requires TAPSILAT_TOKEN)
+test-create-order: ## Test order creation with real API (requires real token in test files)
 	go test -v ./tests/integration/ -run TestCreateOrder
 
 # Run usage examples
