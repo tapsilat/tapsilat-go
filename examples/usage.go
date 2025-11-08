@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -56,7 +57,7 @@ func runBasicOrderExample(api *tapsilat.API) {
 		Buyer:    buyer,
 	}
 
-	response, err := api.CreateOrder(order)
+	response, err := api.CreateOrder(context.Background(), order)
 	if err != nil {
 		log.Printf("Error creating order: %v", err)
 		return
@@ -115,7 +116,7 @@ func runOrderWithBasketItemsExample(api *tapsilat.API) {
 		BasketItems: []tapsilat.OrderBasketItem{basketItem1, basketItem2},
 	}
 
-	response, err := api.CreateOrder(order)
+	response, err := api.CreateOrder(context.Background(), order)
 	if err != nil {
 		log.Printf("Error creating order with basket items: %v", err)
 		return
@@ -159,7 +160,7 @@ func runOrderWithAddressesExample(api *tapsilat.API) {
 		ShippingAddress: shippingAddress,
 	}
 
-	response, err := api.CreateOrder(order)
+	response, err := api.CreateOrder(context.Background(), order)
 	if err != nil {
 		log.Printf("Error creating order with addresses: %v", err)
 		return
@@ -190,7 +191,7 @@ func runOrderWithInstallmentsExample(api *tapsilat.API) {
 		PaymentFailureUrl:   "https://example.com/failure",
 	}
 
-	response, err := api.CreateOrder(order)
+	response, err := api.CreateOrder(context.Background(), order)
 	if err != nil {
 		log.Printf("Error creating order with installments: %v", err)
 		return
@@ -225,7 +226,7 @@ func runOrderWithCheckoutDesignExample(api *tapsilat.API) {
 		CheckoutDesign: design,
 	}
 
-	response, err := api.CreateOrder(order)
+	response, err := api.CreateOrder(context.Background(), order)
 	if err != nil {
 		log.Printf("Error creating order with checkout design: %v", err)
 		return
