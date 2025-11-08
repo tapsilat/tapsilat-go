@@ -1,6 +1,40 @@
 package tapsilat
 
-import "time"
+import (
+	"time"
+)
+
+const (
+	OrderStatusReceived = iota + 1
+	OrderStatusUnpaid
+	OrderStatusPaid
+	OrderStatusProcessing
+	OrderStatusShipped
+	OrderStatusOnHold
+	OrderStatusPayment
+	OrderStatusCancelled
+	OrderStatusCompleted
+	OrderStatusRefunded
+	OrderStatusFraud
+	OrderStatusRejected
+	OrderStatusFailure
+	OrderStatusRetrying
+	OrderStatusPartiallyRefunded
+	OrderStatusSubMerchantPaymentApproved
+	OrderStatusSubMerchantPaymentDisapproved
+	OrderStatusSubMerchantPaymentErrored
+	OrderStatusStillHasUnpaidInstallments
+	OrderStatusStillHasUnpaidTerms
+	OrderStatusExpired
+	OrderStatusStillHasUnpaidSubMerchantPayments
+	OrderStatusPartiallyPaid
+	OrderStatusTerminated
+	OrderStatusCardTokenization
+	OrderStatusPreAuthorized
+	OrderStatusDisputed
+	OrderStatusPartiallyDisputed
+	OrderStatusSuspect
+)
 
 var OrderStatuesMap = []struct {
 	Id     int
@@ -26,6 +60,15 @@ var OrderStatuesMap = []struct {
 	{18, "Sub merchant payment errored"},
 	{19, "Still has unpaid installments"},
 	{20, "Still has unpaid terms"},
+	{21, "Expired"},
+	{22, "Still has unpaid sub merchant payments"},
+	{23, "Partially paid"},
+	{24, "Terminated"},
+	{25, "Card tokenization"},
+	{26, "Pre authorized"},
+	{27, "Disputed"},
+	{28, "Partially disputed"},
+	{29, "Suspect"},
 }
 
 // OrderMetadata represents metadata key-value pairs
