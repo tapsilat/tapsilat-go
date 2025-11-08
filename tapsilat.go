@@ -2,6 +2,7 @@ package tapsilat
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -34,13 +35,13 @@ func NewCustomAPI(endpoint, token string) *API {
 	}
 }
 
-func (t *API) post(path string, payload any, response any) error {
+func (t *API) post(ctx context.Context, path string, payload any, response any) error {
 	url := t.EndPoint + path
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		return err
 	}
@@ -49,9 +50,9 @@ func (t *API) post(path string, payload any, response any) error {
 	return t.do(req, response)
 }
 
-func (t *API) get(path string, response any) error {
+func (t *API) get(ctx context.Context, path string, response any) error {
 	url := t.EndPoint + path
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return err
 	}
@@ -89,7 +90,7 @@ func (t *API) do(req *http.Request, response any) error {
 	return nil
 }
 
-func (t *API) CreateOrder(payload Order) (OrderResponse, error) {
+func (t *API) CreateOrder(ctx context.Context, payload Order) (OrderResponse, error) {
 	var response OrderResponse
 
 	// Validate GSM number if provided
@@ -101,14 +102,14 @@ func (t *API) CreateOrder(payload Order) (OrderResponse, error) {
 		payload.Buyer.GsmNumber = cleanedGSM
 	}
 
-	err := t.post("/order/create", payload, &response)
+	err := t.post(ctx, "/order/create", payload, &response)
 	if err != nil {
 		return response, err
 	}
 
 	// If order creation successful and we have a reference ID, get the checkout URL
 	if response.ReferenceID != "" {
-		checkoutURL, err := t.GetCheckoutURL(response.ReferenceID)
+		checkoutURL, err := t.GetCheckoutURL(ctx, response.ReferenceID)
 		if err == nil && checkoutURL != "" {
 			response.CheckoutURL = checkoutURL
 		}
@@ -118,29 +119,29 @@ func (t *API) CreateOrder(payload Order) (OrderResponse, error) {
 	return response, nil
 }
 
-func (t *API) GetOrder(orderReferenceID string) (OrderDetail, error) {
+func (t *API) GetOrder(ctx context.Context, orderReferenceID string) (OrderDetail, error) {
 	var response OrderDetail
-	err := t.get("/order/"+orderReferenceID, &response)
+	err := t.get(ctx, "/order/"+orderReferenceID, &response)
 	return response, err
 }
 
-func (t *API) GetOrderByConversationID(conversationID string) (OrderDetail, error) {
+func (t *API) GetOrderByConversationID(ctx context.Context, conversationID string) (OrderDetail, error) {
 	var response OrderDetail
-	err := t.get("/order/conversation/"+conversationID, &response)
+	err := t.get(ctx, "/order/conversation/"+conversationID, &response)
 	return response, err
 }
 
-func (t *API) GetOrders(page, perPage, buyerID string) (PaginatedData, error) {
+func (t *API) GetOrders(ctx context.Context, page, perPage, buyerID string) (PaginatedData, error) {
 	var response PaginatedData
 	path := fmt.Sprintf("/order/list?page=%s&per_page=%s", page, perPage)
 	if buyerID != "" {
 		path += "&buyer_id=" + buyerID
 	}
-	err := t.get(path, &response)
+	err := t.get(ctx, path, &response)
 	return response, err
 }
 
-func (t *API) GetOrderList(page, perPage int, startDate, endDate, organizationID, relatedReferenceID string) (PaginatedData, error) {
+func (t *API) GetOrderList(ctx context.Context, page, perPage int, startDate, endDate, organizationID, relatedReferenceID string) (PaginatedData, error) {
 	var response PaginatedData
 	path := fmt.Sprintf("/order/list?page=%d&per_page=%d", page, perPage)
 
@@ -157,32 +158,32 @@ func (t *API) GetOrderList(page, perPage int, startDate, endDate, organizationID
 		path += "&related_reference_id=" + relatedReferenceID
 	}
 
-	err := t.get(path, &response)
+	err := t.get(ctx, path, &response)
 	return response, err
 }
 
-func (t *API) GetOrderSubmerchants(page, perPage int) (PaginatedData, error) {
+func (t *API) GetOrderSubmerchants(ctx context.Context, page, perPage int) (PaginatedData, error) {
 	var response PaginatedData
 	path := fmt.Sprintf("/order/submerchants?page=%d&per_page=%d", page, perPage)
-	err := t.get(path, &response)
+	err := t.get(ctx, path, &response)
 	return response, err
 }
 
-func (t *API) GetCheckoutURL(referenceID string) (string, error) {
-	order, err := t.GetOrder(referenceID)
+func (t *API) GetCheckoutURL(ctx context.Context, referenceID string) (string, error) {
+	order, err := t.GetOrder(ctx, referenceID)
 	if err != nil {
 		return "", err
 	}
 	return order.CheckoutURL, nil
 }
 
-func (t *API) GetOrderStatus(orderReferenceID string) (OrderStatus, error) {
+func (t *API) GetOrderStatus(ctx context.Context, orderReferenceID string) (OrderStatus, error) {
 	var orderStatus OrderStatus
-	err := t.get("/order/"+orderReferenceID+"/status", &orderStatus)
+	err := t.get(ctx, "/order/"+orderReferenceID+"/status", &orderStatus)
 	return orderStatus, err
 }
 
-func (t *API) GetOrderPaymentDetails(referenceID, conversationID string) (map[string]interface{}, error) {
+func (t *API) GetOrderPaymentDetails(ctx context.Context, referenceID, conversationID string) (map[string]interface{}, error) {
 	var response map[string]interface{}
 	path := "/order/payment-details"
 
@@ -192,78 +193,78 @@ func (t *API) GetOrderPaymentDetails(referenceID, conversationID string) (map[st
 		path += "?conversation_id=" + conversationID
 	}
 
-	err := t.get(path, &response)
+	err := t.get(ctx, path, &response)
 	return response, err
 }
 
-func (t *API) GetOrderTransactions(referenceID string) (map[string]interface{}, error) {
+func (t *API) GetOrderTransactions(ctx context.Context, referenceID string) (map[string]interface{}, error) {
 	var response map[string]interface{}
-	err := t.get("/order/"+referenceID+"/transactions", &response)
+	err := t.get(ctx, "/order/"+referenceID+"/transactions", &response)
 	return response, err
 }
 
-func (t *API) CancelOrder(payload CancelOrder) (RefundCancelOrderResponse, error) {
+func (t *API) CancelOrder(ctx context.Context, payload CancelOrder) (RefundCancelOrderResponse, error) {
 	var response RefundCancelOrderResponse
-	err := t.post("/order/cancel", payload, &response)
+	err := t.post(ctx, "/order/cancel", payload, &response)
 	return response, err
 }
 
-func (t *API) RefundOrder(payload RefundOrder) (RefundCancelOrderResponse, error) {
+func (t *API) RefundOrder(ctx context.Context, payload RefundOrder) (RefundCancelOrderResponse, error) {
 	var response RefundCancelOrderResponse
-	err := t.post("/order/refund", payload, &response)
+	err := t.post(ctx, "/order/refund", payload, &response)
 	return response, err
 }
 
-func (t *API) RefundAllOrder(referenceID string) (RefundCancelOrderResponse, error) {
+func (t *API) RefundAllOrder(ctx context.Context, referenceID string) (RefundCancelOrderResponse, error) {
 	payload := RefundOrder{
 		ReferenceID: referenceID,
 	}
-	return t.RefundOrder(payload)
+	return t.RefundOrder(ctx, payload)
 }
 
 // Payment Terms methods
-func (t *API) GetOrderTerm(termReferenceID string) (map[string]interface{}, error) {
+func (t *API) GetOrderTerm(ctx context.Context, termReferenceID string) (map[string]interface{}, error) {
 	var response map[string]interface{}
-	err := t.get("/order/term/"+termReferenceID, &response)
+	err := t.get(ctx, "/order/term/"+termReferenceID, &response)
 	return response, err
 }
 
-func (t *API) CreateOrderTerm(term OrderPaymentTermCreateDTO) (map[string]interface{}, error) {
+func (t *API) CreateOrderTerm(ctx context.Context, term OrderPaymentTermCreateDTO) (map[string]interface{}, error) {
 	var response map[string]interface{}
-	err := t.post("/order/term/create", term, &response)
+	err := t.post(ctx, "/order/term/create", term, &response)
 	return response, err
 }
 
-func (t *API) DeleteOrderTerm(orderID, termReferenceID string) (map[string]interface{}, error) {
+func (t *API) DeleteOrderTerm(ctx context.Context, orderID, termReferenceID string) (map[string]interface{}, error) {
 	var response map[string]interface{}
-	err := t.post("/order/term/delete", map[string]string{
+	err := t.post(ctx, "/order/term/delete", map[string]string{
 		"order_id":          orderID,
 		"term_reference_id": termReferenceID,
 	}, &response)
 	return response, err
 }
 
-func (t *API) UpdateOrderTerm(term OrderPaymentTermUpdateDTO) (map[string]interface{}, error) {
+func (t *API) UpdateOrderTerm(ctx context.Context, term OrderPaymentTermUpdateDTO) (map[string]interface{}, error) {
 	var response map[string]interface{}
-	err := t.post("/order/term/update", term, &response)
+	err := t.post(ctx, "/order/term/update", term, &response)
 	return response, err
 }
 
-func (t *API) RefundOrderTerm(term OrderTermRefundRequest) (map[string]interface{}, error) {
+func (t *API) RefundOrderTerm(ctx context.Context, term OrderTermRefundRequest) (map[string]interface{}, error) {
 	var response map[string]interface{}
-	err := t.post("/order/term/refund", term, &response)
+	err := t.post(ctx, "/order/term/refund", term, &response)
 	return response, err
 }
 
-func (t *API) OrderTerminate(referenceID string) (map[string]interface{}, error) {
+func (t *API) OrderTerminate(ctx context.Context, referenceID string) (map[string]interface{}, error) {
 	var response map[string]interface{}
-	err := t.post("/order/terminate", map[string]string{
+	err := t.post(ctx, "/order/terminate", map[string]string{
 		"reference_id": referenceID,
 	}, &response)
 	return response, err
 }
 
-func (t *API) OrderManualCallback(referenceID, conversationID string) (map[string]interface{}, error) {
+func (t *API) OrderManualCallback(ctx context.Context, referenceID, conversationID string) (map[string]interface{}, error) {
 	var response map[string]interface{}
 	payload := map[string]string{
 		"reference_id": referenceID,
@@ -271,13 +272,13 @@ func (t *API) OrderManualCallback(referenceID, conversationID string) (map[strin
 	if conversationID != "" {
 		payload["conversation_id"] = conversationID
 	}
-	err := t.post("/order/manual-callback", payload, &response)
+	err := t.post(ctx, "/order/manual-callback", payload, &response)
 	return response, err
 }
 
-func (t *API) OrderRelatedUpdate(referenceID, relatedReferenceID string) (map[string]interface{}, error) {
+func (t *API) OrderRelatedUpdate(ctx context.Context, referenceID, relatedReferenceID string) (map[string]interface{}, error) {
 	var response map[string]interface{}
-	err := t.post("/order/related-update", map[string]string{
+	err := t.post(ctx, "/order/related-update", map[string]string{
 		"reference_id":         referenceID,
 		"related_reference_id": relatedReferenceID,
 	}, &response)

@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -72,7 +73,7 @@ func TestCreateOrder(t *testing.T) {
 			},
 		},
 	}
-	response, err := api.CreateOrder(order)
+	response, err := api.CreateOrder(context.Background(), order)
 	require.NoError(t, err, "CreateOrder should not return an error")
 
 	assert.NotEmpty(t, response.ReferenceID, "ReferenceID should not be empty")
@@ -91,7 +92,7 @@ func TestGetOrder(t *testing.T) {
 
 	api := tapsilat.NewAPI(token)
 
-	order, err := api.GetOrder("e0176c98-fb41-4f08-aa03-55bb8d7bb9d6")
+	order, err := api.GetOrder(context.Background(), "e0176c98-fb41-4f08-aa03-55bb8d7bb9d6")
 	require.NoError(t, err, "GetOrder should not return an error")
 
 	assert.NotEmpty(t, order.Locale, "Locale should not be empty")
@@ -107,7 +108,7 @@ func TestGetOrderStatus(t *testing.T) {
 
 	api := tapsilat.NewAPI(token)
 
-	order, err := api.GetOrderStatus("e0176c98-fb41-4f08-aa03-55bb8d7bb9d6")
+	order, err := api.GetOrderStatus(context.Background(), "e0176c98-fb41-4f08-aa03-55bb8d7bb9d6")
 	require.NoError(t, err, "GetOrderStatus should not return an error")
 
 	assert.NotEmpty(t, order.Status, "Status should not be empty")

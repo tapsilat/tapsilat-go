@@ -26,6 +26,35 @@ func main() {
 }
 ```
 
+## Context Usage
+
+All API methods require a `context.Context` parameter. This allows you to control request timeouts and cancellation:
+
+```go
+import (
+    "context"
+    "time"
+    "github.com/tapsilat/tapsilat-go"
+)
+
+// Simple usage with Background context
+response, err := api.CreateOrder(context.Background(), order)
+
+// With timeout - request will be cancelled after 10 seconds
+ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+defer cancel()
+response, err := api.CreateOrder(ctx, order)
+
+// With cancellation - you can cancel the request manually
+ctx, cancel := context.WithCancel(context.Background())
+go func() {
+    // Cancel after some condition
+    time.Sleep(5 * time.Second)
+    cancel()
+}()
+response, err := api.CreateOrder(ctx, order)
+```
+
 ## Usage Examples
 
 ### Basic Order Creation
@@ -33,7 +62,10 @@ func main() {
 ```go
 package main
 
-import "github.com/tapsilat/tapsilat-go"
+import (
+	"context"
+	"github.com/tapsilat/tapsilat-go"
+)
 
 func main() {
 	token := "TOKEN"
@@ -92,7 +124,7 @@ func main() {
 			},
 		},
 	}
-	response, err := api.CreateOrder(order)
+	response, err := api.CreateOrder(context.Background(), order)
 	if err != nil {
 		panic(err)
 	}
@@ -182,7 +214,7 @@ fmt.Println(installments) // Output: [1 2 3 6]
 When you create an order, the response automatically includes a checkout URL that you can use to redirect customers for payment:
 
 ```go
-response, err := api.CreateOrder(order)
+response, err := api.CreateOrder(context.Background(), order)
 if err != nil {
     log.Fatal(err)
 }
@@ -193,7 +225,7 @@ fmt.Printf("Reference ID: %s\n", response.ReferenceID)
 fmt.Printf("Checkout URL: %s\n", response.CheckoutURL)
 
 // You can also get the checkout URL separately if needed
-checkoutURL, err := api.GetCheckoutURL(response.ReferenceID)
+checkoutURL, err := api.GetCheckoutURL(context.Background(), response.ReferenceID)
 if err != nil {
     log.Fatal(err)
 }
@@ -205,12 +237,15 @@ fmt.Printf("Checkout URL: %s\n", checkoutURL)
 ```go
 package main
 
-import "github.com/tapsilat/tapsilat-go"
+import (
+	"context"
+	"github.com/tapsilat/tapsilat-go"
+)
 
 func main() {
 	token := "TOKEN"
 	api := tapsilat.NewAPI(token)
-	order, err := api.GetOrder("order_reference_id")
+	order, err := api.GetOrder(context.Background(), "order_reference_id")
 	if err != nil {
 		panic(err)
 	}
@@ -223,12 +258,15 @@ func main() {
 ```go
 package main
 
-import "github.com/tapsilat/tapsilat-go"
+import (
+	"context"
+	"github.com/tapsilat/tapsilat-go"
+)
 
 func main() {
 	token := "TOKEN"
 	api := tapsilat.NewAPI(token)
-	orders, err := api.GetOrders("page","limit")
+	orders, err := api.GetOrders(context.Background(), "page", "limit", "")
 	if err != nil {
 		panic(err)
 	}
@@ -241,12 +279,15 @@ func main() {
 ```go
 package main
 
-import "github.com/tapsilat/tapsilat-go"
+import (
+	"context"
+	"github.com/tapsilat/tapsilat-go"
+)
 
 func main() {
 	token := "TOKEN"
 	api := tapsilat.NewAPI(token)
-	status, err := api.GetOrderStatus("order_reference_id")
+	status, err := api.GetOrderStatus(context.Background(), "order_reference_id")
 	if err != nil {
 		panic(err)
 	}
@@ -259,7 +300,10 @@ func main() {
 ```go
 package main
 
-import "github.com/tapsilat/tapsilat-go"
+import (
+	"context"
+	"github.com/tapsilat/tapsilat-go"
+)
 
 func main() {
 	token := "TOKEN"
@@ -267,7 +311,7 @@ func main() {
 	payload := tapsilat.CancelOrder{
 		ReferenceID: "order_reference_id",
 	}
-	status, err := api.CancelOrder(payload)
+	status, err := api.CancelOrder(context.Background(), payload)
 	if err != nil {
 		panic(err)
 	}
@@ -280,7 +324,10 @@ func main() {
 ```go
 package main
 
-import "github.com/tapsilat/tapsilat-go"
+import (
+	"context"
+	"github.com/tapsilat/tapsilat-go"
+)
 
 func main() {
 	token := "TOKEN"
@@ -289,7 +336,7 @@ func main() {
 		ReferenceID: "order_reference_id",
 		Amount:      "100",
 	}
-	status, err := api.RefundOrder(payload)
+	status, err := api.RefundOrder(context.Background(), payload)
 	if err != nil {
 		panic(err)
 	}
@@ -299,35 +346,40 @@ func main() {
 
 ## API Methods
 
+All API methods now require a `context.Context` as the first parameter for better control over request cancellation and timeouts.
+
 ### Order Operations
 
-- `CreateOrder(order Order) (OrderResponse, error)`
-- `GetOrder(referenceID string) (OrderDetail, error)`
-- `GetOrderByConversationID(conversationID string) (OrderDetail, error)`
-- `GetOrderStatus(referenceID string) (OrderStatus, error)`
-- `GetOrderList(page, perPage int, startDate, endDate, organizationID, relatedReferenceID string) (PaginatedData, error)`
-- `GetCheckoutURL(referenceID string) (string, error)`
+- `CreateOrder(ctx context.Context, order Order) (OrderResponse, error)`
+- `GetOrder(ctx context.Context, referenceID string) (OrderDetail, error)`
+- `GetOrderByConversationID(ctx context.Context, conversationID string) (OrderDetail, error)`
+- `GetOrderStatus(ctx context.Context, referenceID string) (OrderStatus, error)`
+- `GetOrders(ctx context.Context, page, perPage, buyerID string) (PaginatedData, error)`
+- `GetOrderList(ctx context.Context, page, perPage int, startDate, endDate, organizationID, relatedReferenceID string) (PaginatedData, error)`
+- `GetOrderSubmerchants(ctx context.Context, page, perPage int) (PaginatedData, error)`
+- `GetCheckoutURL(ctx context.Context, referenceID string) (string, error)`
 
 ### Payment Operations
 
-- `RefundOrder(refund RefundOrder) (RefundCancelOrderResponse, error)`
-- `RefundAllOrder(referenceID string) (RefundCancelOrderResponse, error)`
-- `CancelOrder(cancel CancelOrder) (RefundCancelOrderResponse, error)`
+- `RefundOrder(ctx context.Context, refund RefundOrder) (RefundCancelOrderResponse, error)`
+- `RefundAllOrder(ctx context.Context, referenceID string) (RefundCancelOrderResponse, error)`
+- `CancelOrder(ctx context.Context, cancel CancelOrder) (RefundCancelOrderResponse, error)`
 
 ### Payment Terms Operations
 
-- `CreateOrderTerm(term OrderPaymentTermCreateDTO) (map[string]interface{}, error)`
-- `UpdateOrderTerm(term OrderPaymentTermUpdateDTO) (map[string]interface{}, error)`
-- `GetOrderTerm(termReferenceID string) (map[string]interface{}, error)`
-- `DeleteOrderTerm(orderID, termReferenceID string) (map[string]interface{}, error)`
-- `RefundOrderTerm(term OrderTermRefundRequest) (map[string]interface{}, error)`
+- `CreateOrderTerm(ctx context.Context, term OrderPaymentTermCreateDTO) (map[string]interface{}, error)`
+- `UpdateOrderTerm(ctx context.Context, term OrderPaymentTermUpdateDTO) (map[string]interface{}, error)`
+- `GetOrderTerm(ctx context.Context, termReferenceID string) (map[string]interface{}, error)`
+- `DeleteOrderTerm(ctx context.Context, orderID, termReferenceID string) (map[string]interface{}, error)`
+- `RefundOrderTerm(ctx context.Context, term OrderTermRefundRequest) (map[string]interface{}, error)`
 
 ### Utility Operations
 
-- `GetOrderTransactions(referenceID string) (map[string]interface{}, error)`
-- `GetOrderPaymentDetails(referenceID, conversationID string) (map[string]interface{}, error)`
-- `OrderTerminate(referenceID string) (map[string]interface{}, error)`
-- `OrderManualCallback(referenceID, conversationID string) (map[string]interface{}, error)`
+- `GetOrderTransactions(ctx context.Context, referenceID string) (map[string]interface{}, error)`
+- `GetOrderPaymentDetails(ctx context.Context, referenceID, conversationID string) (map[string]interface{}, error)`
+- `OrderTerminate(ctx context.Context, referenceID string) (map[string]interface{}, error)`
+- `OrderManualCallback(ctx context.Context, referenceID, conversationID string) (map[string]interface{}, error)`
+- `OrderRelatedUpdate(ctx context.Context, referenceID, relatedReferenceID string) (map[string]interface{}, error)`
 
 ## Testing
 
@@ -397,7 +449,7 @@ tapsilat-go/
 The SDK provides structured error handling:
 
 ```go
-response, err := api.CreateOrder(order)
+response, err := api.CreateOrder(context.Background(), order)
 if err != nil {
     // Check if it's a validation error
     if validationErr, ok := err.(*tapsilat.ValidationError); ok {
