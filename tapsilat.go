@@ -20,7 +20,7 @@ type API struct {
 // NewAPI creates a new TapsilatAPI struct
 func NewAPI(token string) *API {
 	return &API{
-		EndPoint: "https://acquiring.tapsilat.com/api/v1",
+		EndPoint: "https://panel.tapsilat.dev/api/v1",
 		Token:    token,
 		Timeout:  30 * time.Second,
 	}
