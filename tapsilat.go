@@ -284,3 +284,9 @@ func (t *API) OrderRelatedUpdate(ctx context.Context, referenceID, relatedRefere
 	}, &response)
 	return response, err
 }
+
+func (t *API) GetOrganizationSettings(ctx context.Context) (OrganizationSettings, error) {
+	var response OrganizationSettings
+	err := t.get(ctx, "/organization/settings", &response)
+	return response, err
+}

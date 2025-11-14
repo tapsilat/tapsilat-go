@@ -376,3 +376,15 @@ type SubOrganizationDTO struct {
 	TaxNumber        string `json:"tax_number,omitempty"`
 	Type             string `json:"type,omitempty"`
 }
+
+// Organization Settings DTO
+type OrganizationSettings struct {
+	Ttl                uint64 `json:"ttl,omitempty"`
+	RetryCount         uint64 `json:"retry_count,omitempty"`
+	AllowPayment       bool   `json:"allow_payment,omitempty"`
+	SessionTtl         uint64 `json:"session_ttl,omitempty"`
+	CustomCheckout     bool   `json:"custom_checkout,omitempty"`
+	DomainAddress      string `json:"domain_address,omitempty"`
+	CheckoutDomain     string `json:"checkout_domain,omitempty"`
+	SubscriptionDomain string `json:"subscription_domain,omitempty"`
+}
