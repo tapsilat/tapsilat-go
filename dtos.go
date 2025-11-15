@@ -388,3 +388,156 @@ type OrganizationSettings struct {
 	CheckoutDomain     string `json:"checkout_domain,omitempty"`
 	SubscriptionDomain string `json:"subscription_domain,omitempty"`
 }
+
+// When you select order lite for callbacks, your callback request body will be like this.
+type OrderCallbackLiteDTO struct {
+	ID             string                `json:"id" example:"f0a0a1e9-69bd-4bef-b8c6-4e8c0d3a1212"`
+	ReferenceID    string                `json:"orderReferenceId" example:"f0a0a1e9-69bd-4bef-b8c6-4e8c0d3a1212"`
+	ConversationID string                `json:"conversationId" example:"f0a0a1e9-69bd-4bef-b8c6-4e8c0d3a1212"`
+	OrderNote      string                `json:"orderNote" example:"order note"`
+	IdentityNumber string                `json:"identityNumber" example:"12345678901"`
+	Transactions   []string              `json:"transactions,omitempty" example:"[\"transaction_id1\", \"transaction_id2\"]"`
+	OrderTerms     []string              `json:"orderTerms,omitempty" example:"[\"term1\", \"term2\"]"`
+	Status         string                `json:"status" example:"1"`
+	OrderPayments  []OrderPaymentItemDTO `json:"orderPayments,omitempty"`
+}
+
+type OrderPaymentItemDTO struct {
+	Type       string `json:"type"`
+	PaidAt     string `json:"paid_at" example:"2021-01-01 00:00:00"`
+	PaidAmount string `json:"paid_amount" example:"100.00"`
+}
+
+// When you select order extended for callbacks, your callback request body will be like this.
+type OrderCallbackExtendedDTO struct {
+	ID          string                 `json:"id"`
+	ReferenceID string                 `json:"reference_id"`
+	Terms       []OrderExtendedTermDTO `json:"terms"`
+}
+
+type OrderExtendedTermDTO struct {
+	ReferenceID string                        `json:"reference_id"`
+	Amount      float64                       `json:"amount"`
+	Required    bool                          `json:"required"`
+	Status      uint64                        `json:"status"`
+	Sequence    uint64                        `json:"sequence"`
+	Payments    []OrderExtendedTermPaymentDTO `json:"payments"`
+}
+
+type OrderExtendedTermPaymentDTO struct {
+	ID                string    `json:"id"`
+	ReferenceID       string    `json:"reference_id"`
+	Amount            float64   `json:"amount"`
+	Date              time.Time `json:"date"`
+	Status            uint64    `json:"status"`
+	PaymentType       uint64    `json:"payment_type"`
+	PaymentTypeString string    `json:"payment_type_string"`
+}
+
+// When you select order detail for callbacks, your callback request body will be like this.
+type OrderCallbackDetailDTO struct {
+	ID                 string                       `json:"id"`
+	OrganizationID     string                       `json:"organization_id" example:"f0a0a1e9-69bd-4bef-b8c6-4e8c0d3a1212"`
+	OrderReferenceID   string                       `json:"order_reference_id" example:"f0a0a1e9-69bd-4bef-b8c6-4e8c0d3a1212"`
+	ConversationID     string                       `json:"conversation_id" example:"123456789"`
+	Rule               OrderDetailRuleDTO           `json:"rule"`
+	Vpos               OrderDetailVposDTO           `json:"vpos"`
+	Order              OrderDetailInfoDTO           `json:"order"`
+	PaymentDetails     OrderDetailPaymentDetailsDTO `json:"paymentDetails"`
+	Response           string                       `json:"response" example:"example response"`
+	ResponseJSON       map[string]interface{}       `json:"response_json"`
+	ResponseCallbacks  map[string]interface{}       `json:"response_callbacks"`
+	OrderPaymentStatus OrderDetailPaymentStatusDTO  `json:"order_payment_status"`
+	CreatedAt          time.Time                    `json:"created_at" example:"2021-01-01T00:00:00Z"`
+	UpdatedAt          time.Time                    `json:"updated_at" example:"2021-01-01T00:00:00Z"`
+}
+
+type OrderDetailInfoDTO struct {
+	ReferenceID string    `json:"reference_id"`
+	PaidDate    time.Time `json:"paid_date"`
+	ID          string    `json:"id"`
+	Status      string    `json:"status"`
+}
+
+type OrderDetailPaymentDetailsDTO struct {
+	AuthCode             string `json:"auth_code"`
+	BatchNo              string `json:"batch_no"`
+	OrderID              string `json:"order_id"`
+	ReferenceID          string `json:"reference_id"`
+	PaymentTransactionId string `json:"payment_transaction_id"`
+	IsThreeDS            bool   `json:"is_three_ds"`
+	Installment          string `json:"installment"`
+}
+
+type OrderDetailRuleDTO struct {
+	Name string `json:"name"`
+	ID   string `json:"id" example:"f0a0a1e9-69bd-4bef-b8c6-4e8c0d3a1212"`
+}
+
+type OrderDetailVposDTO struct {
+	ID             string `json:"id" example:"f0a0a1e9-69bd-4bef-b8c6-4e8c0d3a1212"`
+	Name           string `json:"name"`
+	CommissionRate string `json:"commission_rate"`
+}
+
+type OrderDetailPaymentStatusDTO struct {
+	Code             string `json:"code" example:"16"`
+	Message          string `json:"message" example:"NO_SUFFICIENT_FUNDS"`
+	IsError          bool   `json:"is_error" example:"false"`
+	MaskedPan        string `json:"masked_pan" example:"411111******1111"`
+	ExpiryYear       string `json:"expiry_year" example:"2022"`
+	ExpiryMonth      string `json:"expiry_month" example:"12"`
+	AcquirerResponse string `json:"acquirer_response" example:"Insufficient funds"`
+}
+
+// When you select order for callbacks, your callback request body will be like this.
+type OrderCallbackDTO struct {
+	ID                  string               `json:"id" example:"f0a0a1e9-69bd-4bef-b8c6-4e8c0d3a1212"`
+	PartialPayment      *bool                `json:"partial_payment"`
+	ThreeDForce         *bool                `json:"three_d_force"`
+	Locale              string               `json:"locale" example:"en"`
+	ExternalReferenceID string               `json:"external_reference_id" example:"123456789"`
+	ConversationID      string               `json:"conversation_id" example:"f4f4f4f4-f4f4-f4f4-f4f4-f4f4f4f4f4f4"`
+	Amount              float64              `json:"amount" example:"100"`
+	Fee                 float64              `json:"fee"`
+	TaxAmount           float64              `json:"tax_amount" example:"100"`
+	RefundAmount        float64              `json:"refund_amount" example:"100"`
+	BasketID            string               `json:"basket_id" example:"13fwefsa"`
+	PaymentGroup        string               `json:"payment_group" example:"2f3wdqac"`
+	Buyer               OrderBuyer           `json:"buyer"`
+	ShippingAddress     OrderShippingAddress `json:"shipping_address"`
+	BillingAddress      OrderBillingAddress  `json:"billing_address"`
+	BasketItems         []OrderBasketItem    `json:"basket_items"`
+	PaidAmount          float64              `json:"paid_amount" example:"100"`
+	PaidDate            time.Time            `json:"paid_date" example:"2020-01-01 00:00:00"`
+	CancelDate          time.Time            `json:"cancel_date" example:"2020-01-01 00:00:00"`
+	RefundDate          time.Time            `json:"refund_date" example:"2020-01-01 00:00:00"`
+	EnabledInstallments []int                `json:"enabled_installments"`
+	Currency            string               `json:"currency" example:"TRY"`
+	Latitude            float64              `json:"latitude" example:"41.01234567"`
+	Longitude           float64              `json:"longitude" example:"29.01234567"`
+	Status              int                  `json:"status" example:"1"`
+	ReferenceID         string               `json:"reference_id" example:"f0a0a1e9-69bd-4bef-b8c6-4e8c0d3a1212"`
+	OrganizationID      string               `json:"organization_id" example:"f0a0a1e9-69bd-4bef-b8c6-4e8c0d3a1212"`
+	UserID              string               `json:"user_id" example:"f0a0a1e9-69bd-4bef-b8c6-4e8c0d3a1212"`
+	AcquirerID          string               `json:"acquirer_id" example:"f0a0a1e9-69bd-4bef-b8c6-4e8c0d3a1212"`
+	PaymentPageID       string               `json:"payment_page_id" example:"f0a0a1e9-69bd-4bef-b8c6-4e8c0d3a1212"`
+	SubMerchants        []OrderSubmerchant   `json:"sub_merchants"`
+	PaymentSuccessURL   string               `json:"payment_success_url" example:"https://example.com/success"`
+	PaymentFailureURL   string               `json:"payment_failure_url" example:"https://example.com/failure"`
+	RedirectSuccessURL  string               `json:"redirect_success_url" example:"https://example.com/success"`
+	RedirectFailureURL  string               `json:"redirect_failure_url" example:"https://example.com/failure"`
+	SubOrganization     []SubOrganizationDTO `json:"sub_organization"`
+	OrderType           uint64               `json:"order_type" example:"1"`
+	RelatedReferenceID  string               `json:"related_reference_id" example:"f0a0a1e9-69bd-4bef-b8c6-4e8c0d3a1212"`
+	SurchargeAmount     float64              `json:"surcharge_amount"`
+	Descriptor          uint64               `json:"descriptor" example:"1"`
+	Metadata            []OrderMetadata      `json:"metadata"`
+	Note                string               `json:"note" example:"note"`
+	PaymentOptions      []string             `json:"payment_options"`
+	CommissionAmount    float64              `json:"commission_amount"`
+	ThreeDInitializedAt time.Time            `json:"three_d_initialized_at" example:"2020-01-01 00:00:00"`
+	Installment         string               `json:"installment" example:"1"`
+	ScheduledAt         time.Time            `json:"scheduled_at" example:"2020-01-01 00:00:00"` //running query after this date
+	PaymentMode         string               `json:"payment_mode" example:"auth or preauth"`     // auth or preauth
+}
