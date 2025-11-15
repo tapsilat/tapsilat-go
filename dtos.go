@@ -541,3 +541,112 @@ type OrderCallbackDTO struct {
 	ScheduledAt         time.Time            `json:"scheduled_at" example:"2020-01-01 00:00:00"` //running query after this date
 	PaymentMode         string               `json:"payment_mode" example:"auth or preauth"`     // auth or preauth
 }
+
+// Subscription DTOs
+
+// SubscriptionGetRequest represents the request payload for getting a subscription
+type SubscriptionGetRequest struct {
+	ExternalReferenceID string `json:"external_reference_id,omitempty"`
+	ReferenceID         string `json:"reference_id,omitempty"`
+}
+
+// SubscriptionCancelRequest represents the request payload for canceling a subscription
+type SubscriptionCancelRequest struct {
+	ExternalReferenceID string `json:"external_reference_id,omitempty"`
+	ReferenceID         string `json:"reference_id,omitempty"`
+}
+
+// SubscriptionBilling represents billing information for subscription
+type SubscriptionBilling struct {
+	Address     string `json:"address,omitempty"`
+	City        string `json:"city,omitempty"`
+	ContactName string `json:"contact_name,omitempty"`
+	Country     string `json:"country,omitempty"`
+	VatNumber   string `json:"vat_number,omitempty"`
+	ZipCode     string `json:"zip_code,omitempty"`
+}
+
+// SubscriptionUser represents user information for subscription
+type SubscriptionUser struct {
+	Address        string `json:"address,omitempty"`
+	City           string `json:"city,omitempty"`
+	Country        string `json:"country,omitempty"`
+	Email          string `json:"email,omitempty"`
+	FirstName      string `json:"first_name,omitempty"`
+	ID             string `json:"id,omitempty"`
+	IdentityNumber string `json:"identity_number,omitempty"`
+	LastName       string `json:"last_name,omitempty"`
+	Phone          string `json:"phone,omitempty"`
+	ZipCode        string `json:"zip_code,omitempty"`
+}
+
+// SubscriptionCreateRequest represents the request payload for creating a subscription
+type SubscriptionCreateRequest struct {
+	Amount              float64             `json:"amount,omitempty"`
+	Billing             SubscriptionBilling `json:"billing,omitempty"`
+	CardID              string              `json:"card_id,omitempty"`
+	Currency            string              `json:"currency,omitempty"`
+	Cycle               int                 `json:"cycle,omitempty"`
+	ExternalReferenceID string              `json:"external_reference_id,omitempty"`
+	FailureURL          string              `json:"failure_url,omitempty"`
+	PaymentDate         int                 `json:"payment_date,omitempty"`
+	Period              int                 `json:"period,omitempty"`
+	SuccessURL          string              `json:"success_url,omitempty"`
+	Title               string              `json:"title,omitempty"`
+	User                SubscriptionUser    `json:"user,omitempty"`
+}
+
+// SubscriptionRedirectRequest represents the request payload for redirecting a subscription
+type SubscriptionRedirectRequest struct {
+	SubscriptionID string `json:"subscription_id,omitempty"`
+}
+
+// SubscriptionOrder represents an order within a subscription
+type SubscriptionOrder struct {
+	Amount      string `json:"amount,omitempty"`
+	Currency    string `json:"currency,omitempty"`
+	PaymentDate string `json:"payment_date,omitempty"`
+	PaymentURL  string `json:"payment_url,omitempty"`
+	ReferenceID string `json:"reference_id,omitempty"`
+	Status      string `json:"status,omitempty"`
+}
+
+// SubscriptionDetail represents the detailed subscription information
+type SubscriptionDetail struct {
+	Amount              string              `json:"amount,omitempty"`
+	Currency            string              `json:"currency,omitempty"`
+	DueDate             string              `json:"due_date,omitempty"`
+	ExternalReferenceID string              `json:"external_reference_id,omitempty"`
+	IsActive            bool                `json:"is_active,omitempty"`
+	Orders              []SubscriptionOrder `json:"orders,omitempty"`
+	PaymentDate         int                 `json:"payment_date,omitempty"`
+	PaymentStatus       string              `json:"payment_status,omitempty"`
+	Period              int                 `json:"period,omitempty"`
+	Title               string              `json:"title,omitempty"`
+}
+
+// SubscriptionCreateResponse represents the response from creating a subscription
+type SubscriptionCreateResponse struct {
+	Code             int    `json:"code,omitempty"`
+	Message          string `json:"message,omitempty"`
+	OrderReferenceID string `json:"order_reference_id,omitempty"`
+	ReferenceID      string `json:"reference_id,omitempty"`
+}
+
+// SubscriptionListItem represents a single subscription item in the list
+type SubscriptionListItem struct {
+	Amount              string `json:"amount,omitempty"`
+	Currency            string `json:"currency,omitempty"`
+	ExternalReferenceID string `json:"external_reference_id,omitempty"`
+	IsActive            bool   `json:"is_active,omitempty"`
+	PaymentDate         int    `json:"payment_date,omitempty"`
+	PaymentStatus       string `json:"payment_status,omitempty"`
+	Period              int    `json:"period,omitempty"`
+	ReferenceID         string `json:"reference_id,omitempty"`
+	Title               string `json:"title,omitempty"`
+}
+
+// SubscriptionRedirectResponse represents the response from redirecting a subscription
+type SubscriptionRedirectResponse struct {
+	URL string `json:"url,omitempty"`
+}

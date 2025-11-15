@@ -290,3 +290,36 @@ func (t *API) GetOrganizationSettings(ctx context.Context) (OrganizationSettings
 	err := t.get(ctx, "/organization/settings", &response)
 	return response, err
 }
+
+// Subscription methods
+
+func (t *API) GetSubscription(ctx context.Context, payload SubscriptionGetRequest) (SubscriptionDetail, error) {
+	var response SubscriptionDetail
+	err := t.post(ctx, "/subscription", payload, &response)
+	return response, err
+}
+
+func (t *API) CancelSubscription(ctx context.Context, payload SubscriptionCancelRequest) error {
+	var response map[string]interface{}
+	err := t.post(ctx, "/subscription/cancel", payload, &response)
+	return err
+}
+
+func (t *API) CreateSubscription(ctx context.Context, payload SubscriptionCreateRequest) (SubscriptionCreateResponse, error) {
+	var response SubscriptionCreateResponse
+	err := t.post(ctx, "/subscription/create", payload, &response)
+	return response, err
+}
+
+func (t *API) ListSubscriptions(ctx context.Context, page, perPage int) (PaginatedData, error) {
+	var response PaginatedData
+	path := fmt.Sprintf("/subscription/list?page=%d&per_page=%d", page, perPage)
+	err := t.get(ctx, path, &response)
+	return response, err
+}
+
+func (t *API) RedirectSubscription(ctx context.Context, payload SubscriptionRedirectRequest) (SubscriptionRedirectResponse, error) {
+	var response SubscriptionRedirectResponse
+	err := t.post(ctx, "/subscription/redirect", payload, &response)
+	return response, err
+}

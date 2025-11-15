@@ -1,6 +1,6 @@
 # tapsilat-go
 
-Tapsilat Go is a Go client library for accessing the Tapsilat API. It provides convenient access to Tapsilat's API from applications written in the Go language. You can create an order, get order, get order list, get order status, cancel order and refund order.
+Tapsilat Go is a Go client library for accessing the Tapsilat API. It provides convenient access to Tapsilat's API from applications written in the Go language. You can create an order, get order, get order list, get order status, cancel order, refund order, and manage subscriptions.
 
 ## Installation
 
@@ -344,6 +344,185 @@ func main() {
 }
 ```
 
+### Subscription Operations
+
+#### Create Subscription
+
+```go
+package main
+
+import (
+	"context"
+	"github.com/tapsilat/tapsilat-go"
+)
+
+func main() {
+	token := "TOKEN"
+	api := tapsilat.NewAPI(token)
+	
+	subscription := tapsilat.SubscriptionCreateRequest{
+		Amount:              100.0,
+		Currency:            "TRY",
+		Title:               "Monthly Subscription",
+		Period:              30,
+		Cycle:               1,
+		PaymentDate:         1,
+		ExternalReferenceID: "ext_sub_123",
+		SuccessURL:          "https://example.com/success",
+		FailureURL:          "https://example.com/failure",
+		CardID:              "card_token_123",
+		Billing: tapsilat.SubscriptionBilling{
+			Address:     "Istanbul",
+			City:        "Istanbul",
+			Country:     "TR",
+			ZipCode:     "34000",
+			ContactName: "John Doe",
+			VatNumber:   "1234567890",
+		},
+		User: tapsilat.SubscriptionUser{
+			ID:             "user_123",
+			FirstName:      "John",
+			LastName:       "Doe",
+			Email:          "john@doe.com",
+			Phone:          "5555555555",
+			IdentityNumber: "12345678901",
+			Address:        "Istanbul",
+			City:           "Istanbul",
+			Country:        "TR",
+			ZipCode:        "34000",
+		},
+	}
+	
+	response, err := api.CreateSubscription(context.Background(), subscription)
+	if err != nil {
+		panic(err)
+	}
+	println("Subscription created successfully!")
+	println("Reference ID:", response.ReferenceID)
+	println("Order Reference ID:", response.OrderReferenceID)
+}
+```
+
+#### Get Subscription
+
+```go
+package main
+
+import (
+	"context"
+	"github.com/tapsilat/tapsilat-go"
+)
+
+func main() {
+	token := "TOKEN"
+	api := tapsilat.NewAPI(token)
+	
+	payload := tapsilat.SubscriptionGetRequest{
+		ReferenceID: "subscription_reference_id",
+		// Or use ExternalReferenceID: "ext_sub_123",
+	}
+	
+	subscription, err := api.GetSubscription(context.Background(), payload)
+	if err != nil {
+		panic(err)
+	}
+	println("Subscription Title:", subscription.Title)
+	println("Amount:", subscription.Amount)
+	println("Is Active:", subscription.IsActive)
+	println("Payment Status:", subscription.PaymentStatus)
+}
+```
+
+#### List Subscriptions
+
+```go
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"github.com/tapsilat/tapsilat-go"
+)
+
+func main() {
+	token := "TOKEN"
+	api := tapsilat.NewAPI(token)
+	
+	// Get first page with 10 items per page
+	subscriptions, err := api.ListSubscriptions(context.Background(), 1, 10)
+	if err != nil {
+		panic(err)
+	}
+	
+	println("Total subscriptions:", subscriptions.Total)
+	println("Total pages:", subscriptions.TotalPages)
+	
+	// Convert rows to subscription items
+	if subscriptions.Rows != nil {
+		rowsJSON, _ := json.Marshal(subscriptions.Rows)
+		var items []tapsilat.SubscriptionListItem
+		json.Unmarshal(rowsJSON, &items)
+		
+		for _, item := range items {
+			println("Subscription:", item.Title, "- Amount:", item.Amount, "- Status:", item.PaymentStatus)
+		}
+	}
+}
+```
+
+#### Cancel Subscription
+
+```go
+package main
+
+import (
+	"context"
+	"github.com/tapsilat/tapsilat-go"
+)
+
+func main() {
+	token := "TOKEN"
+	api := tapsilat.NewAPI(token)
+	
+	payload := tapsilat.SubscriptionCancelRequest{
+		ReferenceID: "subscription_reference_id",
+		// Or use ExternalReferenceID: "ext_sub_123",
+	}
+	
+	err := api.CancelSubscription(context.Background(), payload)
+	if err != nil {
+		panic(err)
+	}
+	println("Subscription cancelled successfully!")
+}
+```
+
+#### Redirect Subscription
+
+```go
+package main
+
+import (
+	"context"
+	"github.com/tapsilat/tapsilat-go"
+)
+
+func main() {
+	token := "TOKEN"
+	api := tapsilat.NewAPI(token)
+	
+	payload := tapsilat.SubscriptionRedirectRequest{
+		SubscriptionID: "subscription_id",
+	}
+	
+	response, err := api.RedirectSubscription(context.Background(), payload)
+	if err != nil {
+		panic(err)
+	}
+	println("Redirect URL:", response.URL)
+}
+```
+
 ## API Methods
 
 All API methods now require a `context.Context` as the first parameter for better control over request cancellation and timeouts.
@@ -373,6 +552,14 @@ All API methods now require a `context.Context` as the first parameter for bette
 - `DeleteOrderTerm(ctx context.Context, orderID, termReferenceID string) (map[string]interface{}, error)`
 - `RefundOrderTerm(ctx context.Context, term OrderTermRefundRequest) (map[string]interface{}, error)`
 
+### Subscription Operations
+
+- `CreateSubscription(ctx context.Context, subscription SubscriptionCreateRequest) (SubscriptionCreateResponse, error)`
+- `GetSubscription(ctx context.Context, payload SubscriptionGetRequest) (SubscriptionDetail, error)`
+- `ListSubscriptions(ctx context.Context, page, perPage int) (PaginatedData, error)`
+- `CancelSubscription(ctx context.Context, payload SubscriptionCancelRequest) error`
+- `RedirectSubscription(ctx context.Context, payload SubscriptionRedirectRequest) (SubscriptionRedirectResponse, error)`
+
 ### Utility Operations
 
 - `GetOrderTransactions(ctx context.Context, referenceID string) (map[string]interface{}, error)`
@@ -380,6 +567,7 @@ All API methods now require a `context.Context` as the first parameter for bette
 - `OrderTerminate(ctx context.Context, referenceID string) (map[string]interface{}, error)`
 - `OrderManualCallback(ctx context.Context, referenceID, conversationID string) (map[string]interface{}, error)`
 - `OrderRelatedUpdate(ctx context.Context, referenceID, relatedReferenceID string) (map[string]interface{}, error)`
+- `GetOrganizationSettings(ctx context.Context) (OrganizationSettings, error)`
 
 ## Testing
 
