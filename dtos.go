@@ -35,6 +35,18 @@ const (
 	OrderStatusPartiallyDisputed
 	OrderStatusSuspect
 
+	OrderTypePhysical       uint64 = 1
+	OrderTypeVirtual        uint64 = 2
+	OrderTypeMarketplace    uint64 = 3
+	OrderTypeSubscription   uint64 = 4
+	OrderTypeDeposit        uint64 = 5
+	OrderTypeMailOrder      uint64 = 6
+	OrderTypeTelephoneOrder uint64 = 7
+	OrderTypeInvoice        uint64 = 8
+	OrderTypeLoan           uint64 = 9
+	OrderTypeRemittance     uint64 = 10
+	OrderTypeCarLoan        uint64 = 11
+
 	SubscriptionStatusSuccess = "success"
 	SubscriptionStatusFailure = "failure"
 )
