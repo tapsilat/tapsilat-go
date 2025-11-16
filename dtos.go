@@ -34,6 +34,9 @@ const (
 	OrderStatusDisputed
 	OrderStatusPartiallyDisputed
 	OrderStatusSuspect
+
+	SubscriptionStatusSuccess = "success"
+	SubscriptionStatusFailure = "failure"
 )
 
 var OrderStatuesMap = []struct {
