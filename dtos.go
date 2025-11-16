@@ -74,6 +74,16 @@ var OrderStatuesMap = []struct {
 	{29, "Suspect"},
 }
 
+// GetOrderStatusByStr returns the order status id by string
+func GetOrderStatusByStr(status string) int {
+	for _, v := range OrderStatuesMap {
+		if v.Status == status {
+			return v.Id
+		}
+	}
+	return 0
+}
+
 // OrderMetadata represents metadata key-value pairs
 type OrderMetadata struct {
 	Key   string `json:"key"`
