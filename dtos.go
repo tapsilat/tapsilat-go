@@ -49,6 +49,7 @@ const (
 
 	SubscriptionStatusSuccess = "success"
 	SubscriptionStatusFailure = "failure"
+	SubscriptionStatusPending = "pending"
 )
 
 var OrderStatuesMap = []struct {
