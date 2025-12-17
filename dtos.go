@@ -328,9 +328,9 @@ type OrderStatus struct {
 }
 
 type RefundOrder struct {
-	ReferenceID string `json:"reference_id"`
-	Amount      string `json:"amount"`
-	Error       string `json:"error"`
+	ReferenceID string  `json:"reference_id"`
+	Amount      float64 `json:"amount"`
+	Error       string  `json:"error"`
 }
 
 type CancelOrder struct {
@@ -580,6 +580,7 @@ type SubscriptionGetRequest struct {
 type SubscriptionCancelRequest struct {
 	ExternalReferenceID string `json:"external_reference_id,omitempty"`
 	ReferenceID         string `json:"reference_id,omitempty"`
+	SubscriptionID      string `json:"subscription_id,omitempty"`
 }
 
 // SubscriptionBilling represents billing information for subscription
