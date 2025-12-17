@@ -197,8 +197,8 @@ func (t *API) GetOrderPaymentDetails(ctx context.Context, referenceID, conversat
 	return response, err
 }
 
-func (t *API) GetOrderTransactions(ctx context.Context, referenceID string) (map[string]interface{}, error) {
-	var response map[string]interface{}
+func (t *API) GetOrderTransactions(ctx context.Context, referenceID string) ([]map[string]interface{}, error) {
+	var response []map[string]interface{}
 	err := t.get(ctx, "/order/"+referenceID+"/transactions", &response)
 	return response, err
 }

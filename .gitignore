@@ -32,3 +32,5 @@ go.work
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+vendor
