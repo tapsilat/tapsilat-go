@@ -328,9 +328,9 @@ type OrderStatus struct {
 }
 
 type RefundOrder struct {
-	ReferenceID string `json:"reference_id"`
-	Amount      string `json:"amount"`
-	Error       string `json:"error"`
+	ReferenceID string  `json:"reference_id"`
+	Amount      float64 `json:"amount"`
+	Error       string  `json:"error"`
 }
 
 type CancelOrder struct {
