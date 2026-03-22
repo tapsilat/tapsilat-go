@@ -1,0 +1,13 @@
+{
+  "id": "v_1",
+  "name": "Akbank POS",
+  "bank_name": "Akbank",
+  "env_mode": "test",
+  "provider": "akbank",
+  "payment_mode": "3d",
+  "merchant": "m_1",
+  "terminal": "t_1",
+  "acquirer_id": "acq_1",
+  "card_schemes": ["visa", "mastercard"],
+  "currencies": ["TRY"]
+}

@@ -1,0 +1,15 @@
+{
+  "page": 1,
+  "per_page": 10,
+  "total": 1,
+  "total_pages": 1,
+  "rows": [
+    {
+      "id": "vs_1",
+      "external_reference_id": "ext_1",
+      "submerchant_id": "sub_1",
+      "terminal_no": "1234",
+      "vpos_id": "v_1"
+    }
+  ]
+}

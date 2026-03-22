@@ -389,6 +389,350 @@ type OrderTermRefundRequest struct {
 	Amount          *float64 `json:"amount,omitempty"`
 }
 
+type SubmerchantCreateRequest struct {
+	Locale                string `json:"locale"`
+	ConversationID        string `json:"conversation_id"`
+	Name                  string `json:"name"`
+	Email                 string `json:"email"`
+	GsmNumber             string `json:"gsm_number"`
+	Address               string `json:"address"`
+	Iban                  string `json:"iban"`
+	TaxOffice             string `json:"tax_office"`
+	LegalCompanyTitle     string `json:"legal_company_title"`
+	CurrencyID            string `json:"currency_id"`
+	SubmerchantExternalID string `json:"sub_merchant_external_id"`
+	IdentityNumber        string `json:"identity_number"`
+	SubmerchantType       string `json:"sub_merchant_type"`
+	TaxNumber             string `json:"tax_number"`
+	SubmerchantKey        string `json:"sub_merchant_key"`
+	OrganizationID        string `json:"organization_id"`
+	Status                string `json:"status"`
+	SystemTime            int64  `json:"system_time"`
+	ContactName           string `json:"contact_name"`
+	ContactSurname        string `json:"contact_surname"`
+}
+
+type SubmerchantUpdateRequest struct {
+	Locale                string `json:"locale"`
+	ConversationID        string `json:"conversation_id"`
+	Name                  string `json:"name"`
+	Email                 string `json:"email"`
+	GsmNumber             string `json:"gsm_number"`
+	Address               string `json:"address"`
+	Iban                  string `json:"iban"`
+	TaxOffice             string `json:"tax_office"`
+	LegalCompanyTitle     string `json:"legal_company_title"`
+	CurrencyID            string `json:"currency_id"`
+	SubmerchantExternalID string `json:"sub_merchant_external_id"`
+	IdentityNumber        string `json:"identity_number"`
+	SubmerchantType       string `json:"sub_merchant_type"`
+	TaxNumber             string `json:"tax_number"`
+	SubmerchantKey        string `json:"sub_merchant_key"`
+	OrganizationID        string `json:"organization_id"`
+	Status                string `json:"status"`
+	SystemTime            int64  `json:"system_time"`
+	ContactName           string `json:"contact_name"`
+	ContactSurname        string `json:"contact_surname"`
+}
+
+type Submerchant struct {
+	ID                    string `json:"id,omitempty"`
+	Locale                string `json:"locale,omitempty"`
+	ConversationID        string `json:"conversation_id,omitempty"`
+	Name                  string `json:"name,omitempty"`
+	Email                 string `json:"email,omitempty"`
+	GsmNumber             string `json:"gsm_number,omitempty"`
+	Address               string `json:"address,omitempty"`
+	Iban                  string `json:"iban,omitempty"`
+	TaxOffice             string `json:"tax_office,omitempty"`
+	LegalCompanyTitle     string `json:"legal_company_title,omitempty"`
+	CurrencyID            string `json:"currency_id,omitempty"`
+	SubmerchantExternalID string `json:"sub_merchant_external_id,omitempty"`
+	IdentityNumber        string `json:"identity_number,omitempty"`
+	SubmerchantType       string `json:"sub_merchant_type,omitempty"`
+	TaxNumber             string `json:"tax_number,omitempty"`
+	SubmerchantKey        string `json:"sub_merchant_key,omitempty"`
+	OrganizationID        string `json:"organization_id,omitempty"`
+	Labels                string `json:"labels,omitempty"`
+	Status                string `json:"status,omitempty"`
+	SystemTime            int64  `json:"system_time,omitempty"`
+	Acquirer              string `json:"acquirer,omitempty"`
+	ContactName           string `json:"contact_name,omitempty"`
+	ContactSurname        string `json:"contact_surname,omitempty"`
+}
+
+type SubmerchantListItem struct {
+	ID              string `json:"id,omitempty"`
+	Name            string `json:"name,omitempty"`
+	Email           string `json:"email,omitempty"`
+	SubmerchantType string `json:"submerchant_type,omitempty"`
+	SubmerchantKey  string `json:"submerchant_key,omitempty"`
+	Labels          string `json:"labels,omitempty"`
+	Status          string `json:"status,omitempty"`
+	Acquirer        string `json:"acquirer,omitempty"`
+}
+
+type SubmerchantListResponse struct {
+	Page       int64                 `json:"page,omitempty"`
+	PerPage    int64                 `json:"per_page,omitempty"`
+	Total      int64                 `json:"total,omitempty"`
+	TotalPages int64                 `json:"total_pages,omitempty"`
+	Rows       []SubmerchantListItem `json:"row,omitempty"`
+}
+
+type SubmerchantMutationResponse struct {
+	Code           uint64 `json:"code,omitempty"`
+	Message        string `json:"message,omitempty"`
+	Status         string `json:"status,omitempty"`
+	Locale         string `json:"locale,omitempty"`
+	SystemTime     int64  `json:"system_time,omitempty"`
+	ConversationID string `json:"conversation_id,omitempty"`
+	SubmerchantKey string `json:"sub_merchant_key,omitempty"`
+}
+
+type SuborganizationListItem struct {
+	ID   string `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+}
+
+type SuborganizationDetail struct {
+	ID                 string `json:"id,omitempty"`
+	Name               string `json:"name,omitempty"`
+	ParentID           string `json:"parent_id,omitempty"`
+	PublicStatus       int64  `json:"public_status,omitempty"`
+	AvailabilityStatus int64  `json:"availability_status,omitempty"`
+	CreatedAt          string `json:"created_at,omitempty"`
+	UpdatedAt          string `json:"updated_at,omitempty"`
+}
+
+type SuborganizationListResponse struct {
+	Page       int64                     `json:"page,omitempty"`
+	PerPage    int64                     `json:"per_page,omitempty"`
+	Total      int64                     `json:"total,omitempty"`
+	TotalPages int64                     `json:"total_pages,omitempty"`
+	Rows       []SuborganizationListItem `json:"rows,omitempty"`
+}
+
+type SubmerchantSuborganizationMapping struct {
+	SubmerchantID     string `json:"submerchant_id,omitempty"`
+	SuborganizationID string `json:"suborganization_id,omitempty"`
+}
+
+type SuborganizationSubmerchantMapping struct {
+	SuborganizationID string `json:"suborganization_id,omitempty"`
+	SubmerchantID     string `json:"submerchant_id,omitempty"`
+}
+
+type VposCreateRequest struct {
+	Name         string   `json:"name"`
+	BankName     string   `json:"bank_name"`
+	EnvMode      string   `json:"env_mode"`
+	Merchant     string   `json:"merchant"`
+	MerchantCode string   `json:"merchant_code"`
+	MerchantKey  string   `json:"merchant_key"`
+	AuthKey      string   `json:"auth_key"`
+	Terminal     string   `json:"terminal"`
+	Company      string   `json:"company"`
+	Username     string   `json:"username"`
+	Password     string   `json:"password"`
+	StoreKey     string   `json:"store_key"`
+	ApiKey       string   `json:"api_key"`
+	ApiSecret    string   `json:"api_secret"`
+	GUID         string   `json:"guid"`
+	PID          string   `json:"pid"`
+	ClientID     string   `json:"client_id"`
+	ClientCode   string   `json:"client_code"`
+	Type         string   `json:"type"`
+	BlockDate    uint64   `json:"block_date"`
+	Priority     int64    `json:"priority"`
+	Main         bool     `json:"main"`
+	ForceThreeD  bool     `json:"force_three_d"`
+	Marketplace  bool     `json:"marketplace"`
+	Pf           bool     `json:"pf"`
+	PaymentMode  string   `json:"payment_mode"`
+	Prefix       string   `json:"prefix"`
+	AcquirerID   string   `json:"acquirer_id"`
+	CardSchemes  []string `json:"card_schemes"`
+	Currencies   []string `json:"currencies"`
+}
+
+type VposUpdateRequest struct {
+	Name         string   `json:"name"`
+	BankName     string   `json:"bank_name"`
+	EnvMode      string   `json:"env_mode"`
+	Merchant     string   `json:"merchant"`
+	MerchantCode string   `json:"merchant_code"`
+	MerchantKey  string   `json:"merchant_key"`
+	AuthKey      string   `json:"auth_key"`
+	Terminal     string   `json:"terminal"`
+	Company      string   `json:"company"`
+	Username     string   `json:"username"`
+	Password     string   `json:"password"`
+	StoreKey     string   `json:"store_key"`
+	ApiKey       string   `json:"api_key"`
+	ApiSecret    string   `json:"api_secret"`
+	GUID         string   `json:"guid"`
+	PID          string   `json:"pid"`
+	ClientID     string   `json:"client_id"`
+	ClientCode   string   `json:"client_code"`
+	Type         string   `json:"type"`
+	BlockDate    uint64   `json:"block_date"`
+	Priority     int64    `json:"priority"`
+	Main         bool     `json:"main"`
+	ForceThreeD  bool     `json:"force_three_d"`
+	Marketplace  bool     `json:"marketplace"`
+	Pf           bool     `json:"pf"`
+	PaymentMode  string   `json:"payment_mode"`
+	Prefix       string   `json:"prefix"`
+	AcquirerID   string   `json:"acquirer_id"`
+	CardSchemes  []string `json:"card_schemes"`
+	Currencies   []string `json:"currencies"`
+}
+
+type Vpos struct {
+	ID           string   `json:"id,omitempty"`
+	Name         string   `json:"name,omitempty"`
+	BankName     string   `json:"bank_name,omitempty"`
+	EnvMode      string   `json:"env_mode,omitempty"`
+	Provider     string   `json:"provider,omitempty"`
+	PaymentMode  string   `json:"payment_mode,omitempty"`
+	Merchant     string   `json:"merchant,omitempty"`
+	MerchantCode string   `json:"merchant_code,omitempty"`
+	MerchantKey  string   `json:"merchant_key,omitempty"`
+	AuthKey      string   `json:"auth_key,omitempty"`
+	Terminal     string   `json:"terminal,omitempty"`
+	Company      string   `json:"company,omitempty"`
+	Username     string   `json:"username,omitempty"`
+	Password     string   `json:"password,omitempty"`
+	StoreKey     string   `json:"store_key,omitempty"`
+	ApiKey       string   `json:"api_key,omitempty"`
+	ApiSecret    string   `json:"api_secret,omitempty"`
+	GUID         string   `json:"guid,omitempty"`
+	PID          string   `json:"pid,omitempty"`
+	ClientID     string   `json:"client_id,omitempty"`
+	ClientCode   string   `json:"client_code,omitempty"`
+	Type         string   `json:"type,omitempty"`
+	BlockDate    uint64   `json:"block_date,omitempty"`
+	Priority     int64    `json:"priority,omitempty"`
+	Main         bool     `json:"main,omitempty"`
+	ForceThreeD  bool     `json:"force_three_d,omitempty"`
+	Marketplace  bool     `json:"marketplace,omitempty"`
+	Pf           bool     `json:"pf,omitempty"`
+	Prefix       string   `json:"prefix,omitempty"`
+	AcquirerID   string   `json:"acquirer_id,omitempty"`
+	CardSchemes  []string `json:"card_schemes,omitempty"`
+	Currencies   []string `json:"currencies,omitempty"`
+}
+
+type VposListItem struct {
+	ID          string `json:"id,omitempty"`
+	Name        string `json:"name,omitempty"`
+	BankName    string `json:"bank_name,omitempty"`
+	EnvMode     string `json:"env_mode,omitempty"`
+	Provider    string `json:"provider,omitempty"`
+	PaymentMode string `json:"payment_mode,omitempty"`
+}
+
+type VposListFilter struct {
+	SuborganizationID string `json:"suborganization_id,omitempty"`
+}
+
+type VposListResponse struct {
+	Page       int64          `json:"page,omitempty"`
+	PerPage    int64          `json:"per_page,omitempty"`
+	Total      int64          `json:"total,omitempty"`
+	TotalPages int64          `json:"total_pages,omitempty"`
+	Rows       []VposListItem `json:"rows,omitempty"`
+}
+
+type VposMutationResponse struct {
+	Code    uint64 `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
+type VposAcquirer struct {
+	ID     string `json:"id,omitempty"`
+	Name   string `json:"name,omitempty"`
+	Prefix string `json:"prefix,omitempty"`
+}
+
+type VposAcquirerListResponse struct {
+	Items []VposAcquirer `json:"items,omitempty"`
+}
+
+type CardScheme struct {
+	ID   string `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+}
+
+type CardSchemeListResponse struct {
+	Items []CardScheme `json:"items,omitempty"`
+}
+
+type VposSubmerchantCreateRequest struct {
+	ExternalReferenceID string `json:"external_reference_id"`
+	SubmerchantID       string `json:"submerchant_id"`
+	TerminalNo          string `json:"terminal_no"`
+	VposID              string `json:"vpos_id"`
+	MCC                 string `json:"mcc"`
+	TaxID               string `json:"tax_id"`
+	NationalID          string `json:"national_id"`
+	Title               string `json:"title"`
+	SwitchID            string `json:"switch_id"`
+	City                string `json:"city"`
+	Country             string `json:"country"`
+	CountryISOCode      string `json:"country_isocode"`
+	PostalCode          string `json:"postal_code"`
+	Address             string `json:"address"`
+	SubmerchantURL      string `json:"submerchant_url"`
+	SubmerchantNIN      string `json:"submerchant_nin"`
+}
+
+type VposSubmerchantUpdateRequest struct {
+	ExternalReferenceID string `json:"external_reference_id"`
+	SubmerchantID       string `json:"submerchant_id"`
+	TerminalNo          string `json:"terminal_no"`
+	MCC                 string `json:"mcc"`
+	TaxID               string `json:"tax_id"`
+	NationalID          string `json:"national_id"`
+	Title               string `json:"title"`
+	SwitchID            string `json:"switch_id"`
+}
+
+type VposSubmerchant struct {
+	ID                  string `json:"id,omitempty"`
+	ExternalReferenceID string `json:"external_reference_id,omitempty"`
+	SubmerchantID       string `json:"submerchant_id,omitempty"`
+	TerminalNo          string `json:"terminal_no,omitempty"`
+	VposID              string `json:"vpos_id,omitempty"`
+	MCC                 string `json:"mcc,omitempty"`
+	TaxID               string `json:"tax_id,omitempty"`
+	NationalID          string `json:"national_id,omitempty"`
+	Title               string `json:"title,omitempty"`
+	SwitchID            string `json:"switch_id,omitempty"`
+}
+
+type VposSubmerchantListItem struct {
+	ID                  string `json:"id,omitempty"`
+	ExternalReferenceID string `json:"external_reference_id,omitempty"`
+	SubmerchantID       string `json:"submerchant_id,omitempty"`
+	TerminalNo          string `json:"terminal_no,omitempty"`
+	VposID              string `json:"vpos_id,omitempty"`
+}
+
+type VposSubmerchantListResponse struct {
+	Page       int64                     `json:"page,omitempty"`
+	PerPage    int64                     `json:"per_page,omitempty"`
+	Total      int64                     `json:"total,omitempty"`
+	TotalPages int64                     `json:"total_pages,omitempty"`
+	Rows       []VposSubmerchantListItem `json:"rows,omitempty"`
+}
+
+type VposSubmerchantMutationResponse struct {
+	Code    uint64 `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
 // Sub Organization DTO
 type SubOrganizationDTO struct {
 	Acquirer         string `json:"acquirer,omitempty"`

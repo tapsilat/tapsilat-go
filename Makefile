@@ -1,6 +1,6 @@
 # Tapsilat Go SDK Makefile
 
-.PHONY: test test-unit test-integration test-coverage clean build fmt vet lint help
+.PHONY: test test-unit test-integration test-smoke test-coverage clean build fmt vet lint help
 
 # Default target
 help: ## Show this help message
@@ -18,6 +18,10 @@ test-unit: ## Run unit tests only
 test-integration: ## Run integration tests only (requires real token in test files)
 	@echo "Running integration tests..."
 	go test -v ./tests/integration/...
+
+test-smoke: ## Run smoke tests against local/sandbox panel (requires env vars)
+	@echo "Running smoke tests..."
+	go test -v ./tests/smoke/...
 
 test-coverage: ## Run tests with coverage report
 	@echo "Running tests with coverage..."

@@ -13,7 +13,7 @@ func TestAPICreation(t *testing.T) {
 
 		assert.NotNil(t, api)
 		assert.Equal(t, "test_token", api.Token)
-		assert.Equal(t, "https://acquiring.tapsilat.com/api/v1", api.EndPoint)
+		assert.Equal(t, "https://panel.tapsilat.dev/api/v1", api.EndPoint)
 		assert.NotZero(t, api.Timeout)
 	})
 
@@ -61,11 +61,11 @@ func TestRefundOrder(t *testing.T) {
 	t.Run("RefundOrderCreation", func(t *testing.T) {
 		refund := tapsilat.RefundOrder{
 			ReferenceID: "test_ref_123",
-			Amount:      "100.50",
+			Amount:      100.50,
 		}
 
 		assert.Equal(t, "test_ref_123", refund.ReferenceID)
-		assert.Equal(t, "100.50", refund.Amount)
+		assert.Equal(t, 100.50, refund.Amount)
 	})
 }
 

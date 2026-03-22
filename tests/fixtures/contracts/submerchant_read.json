@@ -1,0 +1,15 @@
+{
+  "id": "sub_1",
+  "locale": "tr",
+  "conversation_id": "conv_1",
+  "name": "Tenant A",
+  "email": "tenant@example.com",
+  "gsm_number": "+905551112233",
+  "address": "Istanbul",
+  "sub_merchant_type": "PRIVATE_COMPANY",
+  "sub_merchant_key": "sm_key_1",
+  "organization_id": "org_1",
+  "status": "active",
+  "contact_name": "Jane",
+  "contact_surname": "Doe"
+}
