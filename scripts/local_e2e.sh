@@ -46,7 +46,7 @@ Environment:
   # Optional test bootstrap
   AUTO_CREATE_SUBMERCHANT       1 to auto-create submerchant before tests
   AUTO_CREATE_VPOS              1 to auto-create vpos + vpos-submerchant mapping before tests
-  BOOTSTRAP_CURRENCY_ID         Currency UUID for submerchant create (auto-detected from /wallet/currencies if empty)
+  BOOTSTRAP_CURRENCY_ID         Primary currency UUID for submerchant create (auto-detected from /wallet/currencies if empty)
   BOOTSTRAP_SUBMERCHANT_TYPE    default: PERSONAL
   BOOTSTRAP_SUBMERCHANT_NAME    default: sdk-e2e-<timestamp>
   BOOTSTRAP_SUBMERCHANT_EMAIL   default: sdk-e2e-<timestamp>@example.com
@@ -237,6 +237,22 @@ pick_currency_id() {
   printf '%s' "$currency_id"
 }
 
+pick_currency_ids_json() {
+  if [[ -n "${BOOTSTRAP_CURRENCY_IDS_JSON:-}" ]]; then
+    printf '%s' "$BOOTSTRAP_CURRENCY_IDS_JSON"
+    return 0
+  fi
+
+  local currencies
+  currencies="$(api_get '/wallet/currencies?page=1&per_page=10')"
+
+  local currency_ids_json
+  currency_ids_json="$(printf '%s' "$currencies" | jq -c '(.rows // .row // .data // []) | map(.id // .currency_id // .currencyId // empty) | map(select(. != "")) | unique | .[:2]')"
+  [[ "$currency_ids_json" != "[]" ]] || fail "could not resolve currency ids from /wallet/currencies. set BOOTSTRAP_CURRENCY_IDS_JSON"
+
+  printf '%s' "$currency_ids_json"
+}
+
 bootstrap_submerchant_ids() {
   local now suffix default_name default_email default_gsm
   now="$(date +%s)"
@@ -378,7 +394,7 @@ bootstrap_vpos_ids() {
   submerchant_id="${TAPSILAT_SMOKE_SUBMERCHANT_ID:-${TAPSILAT_IT_SUBMERCHANT_ID:-${BOOTSTRAP_CREATED_SUBMERCHANT_ID:-}}}"
   [[ -n "$submerchant_id" ]] || fail "vpos bootstrap requires submerchant id. use --bootstrap-submerchant or set TAPSILAT_SMOKE_SUBMERCHANT_ID/TAPSILAT_IT_SUBMERCHANT_ID"
 
-  local now vpos_name vpos_external_id terminal_no acquirer_id currency_id
+  local now vpos_name vpos_external_id terminal_no acquirer_id currency_id currency_ids_json
   now="$(date +%s)"
   vpos_name="${BOOTSTRAP_VPOS_NAME:-sdk-e2e-vpos-${now}}"
   vpos_external_id="${BOOTSTRAP_VPOS_EXTERNAL_ID:-sdk-e2e-vpos-ext-${now}}"
@@ -390,6 +406,7 @@ bootstrap_vpos_ids() {
   [[ -n "$acquirer_id" ]] || fail "could not resolve acquirer_id from /vpos/acquirers"
 
   currency_id="$(pick_currency_id)"
+  currency_ids_json="$(pick_currency_ids_json)"
 
   log "Bootstrapping vpos fixture"
 
@@ -399,13 +416,13 @@ bootstrap_vpos_ids() {
     --arg env_mode "test" \
     --arg payment_mode "api" \
     --arg acquirer_id "$acquirer_id" \
-    --arg currency_id "$currency_id" \
+    --argjson currency_ids "$currency_ids_json" \
     '{
       name: $name,
       env_mode: $env_mode,
       payment_mode: $payment_mode,
       acquirer_id: $acquirer_id,
-      currencies: [$currency_id]
+      currencies: $currency_ids
     }')"
 
   vpos_create_resp="$(api_post '/vpos' "$vpos_create_payload")"

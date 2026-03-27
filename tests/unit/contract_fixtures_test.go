@@ -59,6 +59,8 @@ func TestContractFixturesDecode(t *testing.T) {
 		assert.Equal(t, "v_1", res.ID)
 		assert.Equal(t, "Akbank POS", res.Name)
 		assert.Equal(t, "acq_1", res.AcquirerID)
+		require.Len(t, res.Currencies, 1)
+		assert.Equal(t, "9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa", res.Currencies[0])
 	})
 
 	t.Run("VposSubmerchantListFixture", func(t *testing.T) {

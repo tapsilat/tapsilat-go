@@ -131,41 +131,80 @@ func TestGetOrganizationSettings(t *testing.T) {
 	})
 }
 
-func TestCreateSubmerchant(t *testing.T) {
+func TestGetOrganizationCurrencies(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, http.MethodPost, r.Method)
-		assert.Equal(t, "/submerchants", r.URL.Path)
-		assert.Equal(t, "Bearer token_sm", r.Header.Get("Authorization"))
-		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
-
-		body, err := io.ReadAll(r.Body)
-		require.NoError(t, err)
-		assert.JSONEq(t, `{
-			"locale":"tr",
-			"conversation_id":"conv_1",
-			"name":"Tenant A",
-			"email":"tenant@example.com",
-			"gsm_number":"+905551112233",
-			"address":"Istanbul",
-			"iban":"TR00",
-			"tax_office":"Besiktas",
-			"legal_company_title":"Tenant A Ltd",
-			"currency_id":"currency_1",
-			"sub_merchant_external_id":"tenant-ext-1",
-			"identity_number":"",
-			"sub_merchant_type":"PRIVATE_COMPANY",
-			"tax_number":"1234567890",
-			"sub_merchant_key":"",
-			"organization_id":"org_1",
-			"status":"active",
-			"system_time":1710000000,
-			"contact_name":"Jane",
-			"contact_surname":"Doe"
-		}`, string(body))
+		assert.Equal(t, http.MethodGet, r.Method)
+		assert.Equal(t, "/organization/currencies", r.URL.Path)
+		assert.Equal(t, "Bearer token_org_currency", r.Header.Get("Authorization"))
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"code":200,"message":"created"}`))
+		_, _ = w.Write([]byte(`{
+			"currencies":[
+				{"id":"9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa","name":"Turkish Lira","code":"949","currency_unit":"TRY"},
+				{"id":"9f4050e8-2222-4f25-b4ef-bbbbbbbbbbbb","name":"US Dollar","code":"840","currency_unit":"USD"}
+			]
+		}`))
+	}))
+	defer server.Close()
+
+	api := tapsilat.NewCustomAPI(server.URL, "token_org_currency")
+	res, err := api.GetOrganizationCurrencies(context.Background())
+	require.NoError(t, err)
+	require.Len(t, res.Currencies, 2)
+	assert.Equal(t, "9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa", res.Currencies[0].ID)
+	assert.Equal(t, "TRY", res.Currencies[0].CurrencyUnit)
+	assert.Equal(t, "USD", res.Currencies[1].CurrencyUnit)
+}
+
+func TestCreateSubmerchant(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/organization/currencies":
+			assert.Equal(t, http.MethodGet, r.Method)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{
+				"currencies":[
+					{"id":"9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa","name":"Turkish Lira","code":"949","currency_unit":"TRY"}
+				]
+			}`))
+		case "/submerchants":
+			assert.Equal(t, http.MethodPost, r.Method)
+			assert.Equal(t, "Bearer token_sm", r.Header.Get("Authorization"))
+			assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+
+			body, err := io.ReadAll(r.Body)
+			require.NoError(t, err)
+			assert.JSONEq(t, `{
+				"locale":"tr",
+				"conversation_id":"conv_1",
+				"name":"Tenant A",
+				"email":"tenant@example.com",
+				"gsm_number":"+905551112233",
+				"address":"Istanbul",
+				"iban":"TR00",
+				"tax_office":"Besiktas",
+				"legal_company_title":"Tenant A Ltd",
+				"currency_id":"9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa",
+				"sub_merchant_external_id":"tenant-ext-1",
+				"identity_number":"",
+				"sub_merchant_type":"PRIVATE_COMPANY",
+				"tax_number":"1234567890",
+				"sub_merchant_key":"",
+				"organization_id":"org_1",
+				"status":"active",
+				"system_time":1710000000,
+				"contact_name":"Jane",
+				"contact_surname":"Doe"
+			}`, string(body))
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"code":200,"message":"created"}`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
 	}))
 	defer server.Close()
 
@@ -180,7 +219,7 @@ func TestCreateSubmerchant(t *testing.T) {
 		Iban:                  "TR00",
 		TaxOffice:             "Besiktas",
 		LegalCompanyTitle:     "Tenant A Ltd",
-		CurrencyID:            "currency_1",
+		CurrencyID:            "try",
 		SubmerchantExternalID: "tenant-ext-1",
 		IdentityNumber:        "",
 		SubmerchantType:       "PRIVATE_COMPANY",
@@ -263,18 +302,32 @@ func TestListSubmerchants(t *testing.T) {
 
 func TestUpdateSubmerchant(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, http.MethodPatch, r.Method)
-		assert.Equal(t, "/submerchants/sub_1", r.URL.Path)
-		assert.Equal(t, "Bearer token_sm", r.Header.Get("Authorization"))
-		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+		switch r.URL.Path {
+		case "/organization/currencies":
+			assert.Equal(t, http.MethodGet, r.Method)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{
+				"currencies":[
+					{"id":"9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa","name":"Turkish Lira","code":"949","currency_unit":"TRY"}
+				]
+			}`))
+		case "/submerchants/sub_1":
+			assert.Equal(t, http.MethodPatch, r.Method)
+			assert.Equal(t, "Bearer token_sm", r.Header.Get("Authorization"))
+			assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 
-		body, err := io.ReadAll(r.Body)
-		require.NoError(t, err)
-		assert.Contains(t, string(body), `"status":"passive"`)
+			body, err := io.ReadAll(r.Body)
+			require.NoError(t, err)
+			assert.Contains(t, string(body), `"status":"passive"`)
+			assert.Contains(t, string(body), `"currency_id":"9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa"`)
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"code":200,"message":"updated"}`))
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"code":200,"message":"updated"}`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
 	}))
 	defer server.Close()
 
@@ -289,7 +342,7 @@ func TestUpdateSubmerchant(t *testing.T) {
 		Iban:                  "TR00",
 		TaxOffice:             "Besiktas",
 		LegalCompanyTitle:     "Tenant A Ltd",
-		CurrencyID:            "currency_1",
+		CurrencyID:            "TRY",
 		SubmerchantExternalID: "tenant-ext-1",
 		SubmerchantType:       "PRIVATE_COMPANY",
 		TaxNumber:             "1234567890",
@@ -461,17 +514,32 @@ func TestVposMethods(t *testing.T) {
 
 	t.Run("CreateVpos", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, http.MethodPost, r.Method)
-			assert.Equal(t, "/vpos", r.URL.Path)
+			switch r.URL.Path {
+			case "/organization/currencies":
+				assert.Equal(t, http.MethodGet, r.Method)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(`{
+					"currencies":[
+						{"id":"9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa","name":"Turkish Lira","code":"949","currency_unit":"TRY"},
+						{"id":"9f4050e8-2222-4f25-b4ef-bbbbbbbbbbbb","name":"US Dollar","code":"840","currency_unit":"USD"}
+					]
+				}`))
+			case "/vpos":
+				assert.Equal(t, http.MethodPost, r.Method)
 
-			body, err := io.ReadAll(r.Body)
-			require.NoError(t, err)
-			assert.Contains(t, string(body), `"name":"Akbank POS"`)
-			assert.Contains(t, string(body), `"acquirer_id":"acq_1"`)
+				body, err := io.ReadAll(r.Body)
+				require.NoError(t, err)
+				assert.Contains(t, string(body), `"name":"Akbank POS"`)
+				assert.Contains(t, string(body), `"acquirer_id":"acq_1"`)
+				assert.Contains(t, string(body), `"currencies":["9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa","9f4050e8-2222-4f25-b4ef-bbbbbbbbbbbb"]`)
 
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(`{"code":200,"message":"created"}`))
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(`{"code":200,"message":"created"}`))
+			default:
+				w.WriteHeader(http.StatusNotFound)
+			}
 		}))
 		defer server.Close()
 
@@ -483,7 +551,7 @@ func TestVposMethods(t *testing.T) {
 			PaymentMode: "3d",
 			AcquirerID:  "acq_1",
 			CardSchemes: []string{"visa"},
-			Currencies:  []string{"try"},
+			Currencies:  []string{"TRY", "try", "usd"},
 		})
 		require.NoError(t, err)
 		assert.Equal(t, uint64(200), res.Code)
@@ -496,7 +564,7 @@ func TestVposMethods(t *testing.T) {
 
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(`{"id":"v_1","name":"Akbank POS","bank_name":"Akbank","payment_mode":"3d","currencies":["try"]}`))
+			_, _ = w.Write([]byte(`{"id":"v_1","name":"Akbank POS","bank_name":"Akbank","payment_mode":"3d","currencies":["9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa"]}`))
 		}))
 		defer server.Close()
 
@@ -509,16 +577,31 @@ func TestVposMethods(t *testing.T) {
 
 	t.Run("UpdateVpos", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, http.MethodPatch, r.Method)
-			assert.Equal(t, "/vpos/v_1", r.URL.Path)
+			switch r.URL.Path {
+			case "/organization/currencies":
+				assert.Equal(t, http.MethodGet, r.Method)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(`{
+					"currencies":[
+						{"id":"9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa","name":"Turkish Lira","code":"949","currency_unit":"TRY"},
+						{"id":"9f4050e8-2222-4f25-b4ef-bbbbbbbbbbbb","name":"US Dollar","code":"840","currency_unit":"USD"}
+					]
+				}`))
+			case "/vpos/v_1":
+				assert.Equal(t, http.MethodPatch, r.Method)
 
-			body, err := io.ReadAll(r.Body)
-			require.NoError(t, err)
-			assert.Contains(t, string(body), `"payment_mode":"non3d"`)
+				body, err := io.ReadAll(r.Body)
+				require.NoError(t, err)
+				assert.Contains(t, string(body), `"payment_mode":"non3d"`)
+				assert.Contains(t, string(body), `"currencies":["9f4050e8-2222-4f25-b4ef-bbbbbbbbbbbb","9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa"]`)
 
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(`{"code":200,"message":"updated"}`))
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(`{"code":200,"message":"updated"}`))
+			default:
+				w.WriteHeader(http.StatusNotFound)
+			}
 		}))
 		defer server.Close()
 
@@ -530,10 +613,36 @@ func TestVposMethods(t *testing.T) {
 			PaymentMode: "non3d",
 			AcquirerID:  "acq_1",
 			CardSchemes: []string{"visa", "mastercard"},
-			Currencies:  []string{"try"},
+			Currencies:  []string{"usd", "TRY"},
 		})
 		require.NoError(t, err)
 		assert.Equal(t, uint64(200), res.Code)
+	})
+
+	t.Run("CreateVposReturnsValidationErrorForUnknownCurrency", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "/organization/currencies", r.URL.Path)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{
+				"currencies":[
+					{"id":"9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa","name":"Turkish Lira","code":"949","currency_unit":"TRY"}
+				]
+			}`))
+		}))
+		defer server.Close()
+
+		api := tapsilat.NewCustomAPI(server.URL, "token_vpos")
+		_, err := api.CreateVpos(context.Background(), tapsilat.VposCreateRequest{
+			Name:       "Akbank POS",
+			AcquirerID: "acq_1",
+			Currencies: []string{"XYZ"},
+		})
+		require.Error(t, err)
+
+		var validationErr *tapsilat.ValidationError
+		require.ErrorAs(t, err, &validationErr)
+		assert.Contains(t, validationErr.Message, "unknown currency reference")
 	})
 
 	t.Run("DeleteVpos", func(t *testing.T) {

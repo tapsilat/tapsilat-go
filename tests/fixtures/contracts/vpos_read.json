@@ -9,5 +9,5 @@
   "terminal": "t_1",
   "acquirer_id": "acq_1",
   "card_schemes": ["visa", "mastercard"],
-  "currencies": ["TRY"]
+  "currencies": ["9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa"]
 }

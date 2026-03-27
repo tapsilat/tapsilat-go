@@ -3,12 +3,15 @@ package smoke_test
 import (
 	"context"
 	"os"
+	"regexp"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 	tapsilat "github.com/tapsilat/tapsilat-go"
 )
+
+var uuidRegex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`)
 
 func requireSmokeEnv(t *testing.T) (*tapsilat.API, string, string, string, string) {
 	t.Helper()
@@ -35,6 +38,16 @@ func TestSmokeReadAndListFlows(t *testing.T) {
 	t.Run("OrganizationSettings", func(t *testing.T) {
 		_, err := api.GetOrganizationSettings(ctx)
 		require.NoError(t, err, "endpoint: %s", endpoint)
+	})
+
+	t.Run("OrganizationCurrencies", func(t *testing.T) {
+		currencies, err := api.GetOrganizationCurrencies(ctx)
+		require.NoError(t, err, "endpoint: %s", endpoint)
+		for _, currency := range currencies.Currencies {
+			require.NotEmpty(t, currency.ID, "endpoint: %s", endpoint)
+			require.NoError(t, validateUUID(currency.ID), "endpoint: %s", endpoint)
+			require.NotEmpty(t, currency.CurrencyUnit, "endpoint: %s", endpoint)
+		}
 	})
 
 	t.Run("SubmerchantAndSuborganizationList", func(t *testing.T) {
@@ -78,8 +91,12 @@ func TestSmokeReadAndListFlows(t *testing.T) {
 			}
 		}
 		if vposID != "" {
-			_, err := api.GetVpos(ctx, vposID)
+			vpos, err := api.GetVpos(ctx, vposID)
 			require.NoError(t, err, "endpoint: %s", endpoint)
+			require.NotEmpty(t, vpos.Currencies, "endpoint: %s", endpoint)
+			for _, currencyID := range vpos.Currencies {
+				require.NoError(t, validateUUID(currencyID), "endpoint: %s", endpoint)
+			}
 
 			_, err = api.ListVposSubmerchants(ctx, 1, 10, vposID, "")
 			require.NoError(t, err, "endpoint: %s", endpoint)
@@ -92,4 +109,15 @@ func TestSmokeReadAndListFlows(t *testing.T) {
 			}
 		}
 	})
+}
+
+func validateUUID(value string) error {
+	if uuidRegex.MatchString(value) {
+		return nil
+	}
+	return &tapsilat.ValidationError{
+		StatusCode: 400,
+		Code:       0,
+		Message:    "invalid UUID format",
+	}
 }

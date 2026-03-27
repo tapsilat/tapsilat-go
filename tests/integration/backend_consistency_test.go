@@ -3,12 +3,15 @@ package integration_test
 import (
 	"context"
 	"os"
+	"regexp"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 	tapsilat "github.com/tapsilat/tapsilat-go"
 )
+
+var uuidRegex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`)
 
 func requireIntegrationEnv(t *testing.T) (*tapsilat.API, string, string, string, string) {
 	t.Helper()
@@ -48,6 +51,13 @@ func TestBackendConsistency_SubmerchantSuborganizationAndScopedVpos(t *testing.T
 	defer cancel()
 
 	t.Run("BidirectionalMappingConsistency", func(t *testing.T) {
+		currencies, err := api.GetOrganizationCurrencies(ctx)
+		require.NoError(t, err, "endpoint: %s", endpoint)
+		for _, currency := range currencies.Currencies {
+			require.NoError(t, assertUUID(currency.ID), "endpoint: %s", endpoint)
+			require.NotEmpty(t, currency.CurrencyUnit, "endpoint: %s", endpoint)
+		}
+
 		submerchant, err := api.GetSubmerchant(ctx, submerchantID)
 		require.NoError(t, err, "endpoint: %s", endpoint)
 		require.Equal(t, submerchantID, submerchant.ID, "endpoint: %s", endpoint)
@@ -81,6 +91,10 @@ func TestBackendConsistency_SubmerchantSuborganizationAndScopedVpos(t *testing.T
 			vpos, err := api.GetVpos(ctx, vposID)
 			require.NoError(t, err, "endpoint: %s", endpoint)
 			require.Equal(t, vposID, vpos.ID, "endpoint: %s", endpoint)
+			require.NotEmpty(t, vpos.Currencies, "endpoint: %s", endpoint)
+			for _, currencyID := range vpos.Currencies {
+				require.NoError(t, assertUUID(currencyID), "endpoint: %s", endpoint)
+			}
 
 			vposSubmerchantRows, err := api.ListVposSubmerchants(ctx, 1, 100, vposID, "")
 			require.NoError(t, err, "endpoint: %s", endpoint)
@@ -89,4 +103,15 @@ func TestBackendConsistency_SubmerchantSuborganizationAndScopedVpos(t *testing.T
 			}
 		}
 	})
+}
+
+func assertUUID(value string) error {
+	if uuidRegex.MatchString(value) {
+		return nil
+	}
+	return &tapsilat.ValidationError{
+		StatusCode: 400,
+		Code:       0,
+		Message:    "invalid UUID format",
+	}
 }

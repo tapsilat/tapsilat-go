@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 )
 
@@ -17,6 +18,10 @@ type API struct {
 	Token    string `json:"token"`
 	Timeout  time.Duration
 	client   *http.Client
+
+	currencyRefsMu     sync.RWMutex
+	currencyIDsByUnit  map[string]string
+	currencyCacheReady bool
 }
 
 // NewAPI creates a new TapsilatAPI struct
@@ -318,9 +323,20 @@ func (t *API) GetOrganizationSettings(ctx context.Context) (OrganizationSettings
 	return response, err
 }
 
+func (t *API) GetOrganizationCurrencies(ctx context.Context) (OrganizationCurrenciesResponse, error) {
+	var response OrganizationCurrenciesResponse
+	err := t.get(ctx, "/organization/currencies", &response)
+	return response, err
+}
+
 func (t *API) CreateSubmerchant(ctx context.Context, payload SubmerchantCreateRequest) (SubmerchantMutationResponse, error) {
 	var response SubmerchantMutationResponse
-	err := t.post(ctx, "/submerchants", payload, &response)
+	currencyID, err := t.normalizeCurrencyID(ctx, payload.CurrencyID)
+	if err != nil {
+		return response, err
+	}
+	payload.CurrencyID = currencyID
+	err = t.post(ctx, "/submerchants", payload, &response)
 	return response, err
 }
 
@@ -339,7 +355,12 @@ func (t *API) ListSubmerchants(ctx context.Context, page, perPage int) (Submerch
 
 func (t *API) UpdateSubmerchant(ctx context.Context, id string, payload SubmerchantUpdateRequest) (SubmerchantMutationResponse, error) {
 	var response SubmerchantMutationResponse
-	err := t.patch(ctx, "/submerchants/"+id, payload, &response)
+	currencyID, err := t.normalizeCurrencyID(ctx, payload.CurrencyID)
+	if err != nil {
+		return response, err
+	}
+	payload.CurrencyID = currencyID
+	err = t.patch(ctx, "/submerchants/"+id, payload, &response)
 	return response, err
 }
 
@@ -387,7 +408,12 @@ func (t *API) ListVposWithFilter(ctx context.Context, page, perPage int, filter 
 
 func (t *API) CreateVpos(ctx context.Context, payload VposCreateRequest) (VposMutationResponse, error) {
 	var response VposMutationResponse
-	err := t.post(ctx, "/vpos", payload, &response)
+	currencies, err := t.normalizeCurrencyIDs(ctx, payload.Currencies)
+	if err != nil {
+		return response, err
+	}
+	payload.Currencies = currencies
+	err = t.post(ctx, "/vpos", payload, &response)
 	return response, err
 }
 
@@ -399,7 +425,12 @@ func (t *API) GetVpos(ctx context.Context, id string) (Vpos, error) {
 
 func (t *API) UpdateVpos(ctx context.Context, id string, payload VposUpdateRequest) (VposMutationResponse, error) {
 	var response VposMutationResponse
-	err := t.patch(ctx, "/vpos/"+id, payload, &response)
+	currencies, err := t.normalizeCurrencyIDs(ctx, payload.Currencies)
+	if err != nil {
+		return response, err
+	}
+	payload.Currencies = currencies
+	err = t.patch(ctx, "/vpos/"+id, payload, &response)
 	return response, err
 }
 

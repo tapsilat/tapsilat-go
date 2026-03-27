@@ -625,6 +625,7 @@ All API methods now require a `context.Context` as the first parameter for bette
 - `OrderTerminate(ctx context.Context, referenceID string) (map[string]interface{}, error)`
 - `OrderManualCallback(ctx context.Context, referenceID, conversationID string) (map[string]interface{}, error)`
 - `OrderRelatedUpdate(ctx context.Context, referenceID, relatedReferenceID string) (map[string]interface{}, error)`
+- `GetOrganizationCurrencies(ctx context.Context) (OrganizationCurrenciesResponse, error)`
 - `GetOrganizationSettings(ctx context.Context) (OrganizationSettings, error)`
 
 ### Management Operations
@@ -652,6 +653,8 @@ All API methods now require a `context.Context` as the first parameter for bette
 - `GetVposSubmerchant(ctx context.Context, id string) (VposSubmerchant, error)`
 - `UpdateVposSubmerchant(ctx context.Context, id string, payload VposSubmerchantUpdateRequest) (VposSubmerchantMutationResponse, error)`
 - `DeleteVposSubmerchant(ctx context.Context, id string) (VposSubmerchantMutationResponse, error)`
+
+`SubmerchantCreateRequest.CurrencyID`, `SubmerchantUpdateRequest.CurrencyID`, `VposCreateRequest.Currencies`, and `VposUpdateRequest.Currencies` accept either canonical currency UUIDs or organization `currency_unit` values such as `TRY`/`USD`. The SDK resolves non-UUID refs to UUIDs before sending requests.
 
 ## Testing
 

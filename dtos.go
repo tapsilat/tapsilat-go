@@ -759,6 +759,18 @@ type OrganizationSettings struct {
 	SubscriptionDomain string `json:"subscription_domain,omitempty"`
 }
 
+type OrganizationCurrenciesResponse struct {
+	Currencies []OrganizationCurrency `json:"currencies,omitempty"`
+}
+
+type OrganizationCurrency struct {
+	ID           string `json:"id,omitempty"`
+	Name         string `json:"name,omitempty"`
+	Code         string `json:"code,omitempty"`
+	Symbol       string `json:"symbol,omitempty"`
+	CurrencyUnit string `json:"currency_unit,omitempty"`
+}
+
 // When you select order lite for callbacks, your callback request body will be like this.
 type OrderCallbackLiteDTO struct {
 	ID             string                `json:"id" example:"f0a0a1e9-69bd-4bef-b8c6-4e8c0d3a1212"`
