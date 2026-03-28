@@ -346,12 +346,12 @@ type RefundCancelOrderResponse struct {
 }
 
 type PaginatedData struct {
-	Page       int64       `json:"page,omitempty" example:"1"`
-	PerPage    int64       `json:"per_page,omitempty" example:"10"`
-	Total      int64       `json:"total,omitempty" example:"100"`
-	TotalPages int         `json:"total_pages,omitempty" example:"10"`
-	Rows       interface{} `json:"rows,omitempty" swaggertype:"array,string" example:"object,object2"`
-	Error      string      `json:"error"`
+	Page       int64  `json:"page,omitempty" example:"1"`
+	PerPage    int64  `json:"per_page,omitempty" example:"10"`
+	Total      int64  `json:"total,omitempty" example:"100"`
+	TotalPages int    `json:"total_pages,omitempty" example:"10"`
+	Rows       any    `json:"rows,omitempty" swaggertype:"array,string" example:"object,object2"`
+	Error      string `json:"error"`
 }
 
 type OrderCheckoutDesignDTO struct {
@@ -471,8 +471,8 @@ type OrderCallbackDetailDTO struct {
 	Order              OrderDetailInfoDTO           `json:"order"`
 	PaymentDetails     OrderDetailPaymentDetailsDTO `json:"paymentDetails"`
 	Response           string                       `json:"response" example:"example response"`
-	ResponseJSON       map[string]interface{}       `json:"response_json"`
-	ResponseCallbacks  map[string]interface{}       `json:"response_callbacks"`
+	ResponseJSON       map[string]any               `json:"response_json"`
+	ResponseCallbacks  map[string]any               `json:"response_callbacks"`
 	OrderPaymentStatus OrderDetailPaymentStatusDTO  `json:"order_payment_status"`
 	CreatedAt          time.Time                    `json:"created_at" example:"2021-01-01T00:00:00Z"`
 	UpdatedAt          time.Time                    `json:"updated_at" example:"2021-01-01T00:00:00Z"`
@@ -609,7 +609,7 @@ type SubscriptionUser struct {
 // SubscriptionCreateRequest represents the request payload for creating a subscription
 type SubscriptionCreateRequest struct {
 	Amount              float64             `json:"amount,omitempty"`
-	Billing             SubscriptionBilling `json:"billing,omitempty"`
+	Billing             SubscriptionBilling `json:"billing"`
 	CardID              string              `json:"card_id,omitempty"`
 	Currency            string              `json:"currency,omitempty"`
 	Cycle               int                 `json:"cycle,omitempty"`
@@ -619,7 +619,7 @@ type SubscriptionCreateRequest struct {
 	Period              int                 `json:"period,omitempty"`
 	SuccessURL          string              `json:"success_url,omitempty"`
 	Title               string              `json:"title,omitempty"`
-	User                SubscriptionUser    `json:"user,omitempty"`
+	User                SubscriptionUser    `json:"user"`
 }
 
 // SubscriptionRedirectRequest represents the request payload for redirecting a subscription
