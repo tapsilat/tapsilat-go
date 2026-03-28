@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 )
@@ -329,6 +330,24 @@ func (t *API) GetOrganizationCurrencies(ctx context.Context) (OrganizationCurren
 	return response, err
 }
 
+func (t *API) ListOrganizationCurrencyPresets(ctx context.Context) (OrganizationCurrencyPresetsResponse, error) {
+	var response OrganizationCurrencyPresetsResponse
+	err := t.get(ctx, "/organization/currency-presets", &response)
+	return response, err
+}
+
+func (t *API) CreateOrganizationCurrency(ctx context.Context, currencyCode string) (CreateOrganizationCurrencyResponse, error) {
+	var response CreateOrganizationCurrencyResponse
+	payload := map[string]string{
+		"currency_code": strings.ToUpper(strings.TrimSpace(currencyCode)),
+	}
+	err := t.post(ctx, "/organization/currencies", payload, &response)
+	if err == nil {
+		t.invalidateCurrencyCache()
+	}
+	return response, err
+}
+
 func (t *API) CreateSubmerchant(ctx context.Context, payload SubmerchantCreateRequest) (SubmerchantMutationResponse, error) {
 	var response SubmerchantMutationResponse
 	currencyID, err := t.normalizeCurrencyID(ctx, payload.CurrencyID)
@@ -449,6 +468,12 @@ func (t *API) ListVposAcquirers(ctx context.Context) (VposAcquirerListResponse, 
 func (t *API) ListCardSchemes(ctx context.Context) (CardSchemeListResponse, error) {
 	var response CardSchemeListResponse
 	err := t.get(ctx, "/vpos/card-schemes", &response)
+	return response, err
+}
+
+func (t *API) ListVposAcquirerTemplates(ctx context.Context) (VposAcquirerTemplateListResponse, error) {
+	var response VposAcquirerTemplateListResponse
+	err := t.get(ctx, "/vpos/acquirer-templates", &response)
 	return response, err
 }
 

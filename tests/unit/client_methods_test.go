@@ -157,6 +157,60 @@ func TestGetOrganizationCurrencies(t *testing.T) {
 	assert.Equal(t, "USD", res.Currencies[1].CurrencyUnit)
 }
 
+func TestOrganizationCurrencyProvisioningMethods(t *testing.T) {
+	t.Run("ListOrganizationCurrencyPresets", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodGet, r.Method)
+			assert.Equal(t, "/organization/currency-presets", r.URL.Path)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"items":[{"currency_code":"TRY","currency_unit":"TRY","name":"Turkish Lira","minor_unit":2}]}`))
+		}))
+		defer server.Close()
+
+		api := tapsilat.NewCustomAPI(server.URL, "token_org_currency")
+		res, err := api.ListOrganizationCurrencyPresets(context.Background())
+		require.NoError(t, err)
+		require.Len(t, res.Items, 1)
+		assert.Equal(t, "TRY", res.Items[0].CurrencyCode)
+	})
+
+	t.Run("CreateOrganizationCurrencyInvalidatesCache", func(t *testing.T) {
+		requestCount := 0
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			switch {
+			case r.Method == http.MethodGet && r.URL.Path == "/organization/currencies":
+				requestCount++
+				if requestCount == 1 {
+					_, _ = w.Write([]byte(`{"currencies":[{"id":"9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa","name":"Turkish Lira","code":"949","currency_unit":"TRY"}]}`))
+					return
+				}
+				_, _ = w.Write([]byte(`{"currencies":[{"id":"9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa","name":"Turkish Lira","code":"949","currency_unit":"TRY"},{"id":"9f4050e8-2222-4f25-b4ef-bbbbbbbbbbbb","name":"US Dollar","code":"840","currency_unit":"USD"}]}`))
+			case r.Method == http.MethodPost && r.URL.Path == "/organization/currencies":
+				body, err := io.ReadAll(r.Body)
+				require.NoError(t, err)
+				assert.JSONEq(t, `{"currency_code":"USD"}`, string(body))
+				_, _ = w.Write([]byte(`{"code":200,"message":"created","created":true,"currency":{"id":"9f4050e8-2222-4f25-b4ef-bbbbbbbbbbbb","name":"US Dollar","code":"840","currency_unit":"USD"}}`))
+			default:
+				w.WriteHeader(http.StatusNotFound)
+			}
+		}))
+		defer server.Close()
+
+		api := tapsilat.NewCustomAPI(server.URL, "token_org_currency")
+		_, err := api.ResolveCurrencyID(context.Background(), "TRY")
+		require.NoError(t, err)
+		res, err := api.CreateOrganizationCurrency(context.Background(), "usd")
+		require.NoError(t, err)
+		assert.True(t, res.Created)
+		resolved, err := api.ResolveCurrencyID(context.Background(), "USD")
+		require.NoError(t, err)
+		assert.Equal(t, "9f4050e8-2222-4f25-b4ef-bbbbbbbbbbbb", resolved)
+		assert.Equal(t, 2, requestCount)
+	})
+}
+
 func TestCreateSubmerchant(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -670,6 +724,8 @@ func TestVposMethods(t *testing.T) {
 				_, _ = w.Write([]byte(`{"items":[{"id":"acq_1","name":"Akbank","prefix":"akbank"}]}`))
 			case "/vpos/card-schemes":
 				_, _ = w.Write([]byte(`{"items":[{"id":"visa","name":"Visa"}]}`))
+			case "/vpos/acquirer-templates":
+				_, _ = w.Write([]byte(`{"items":[{"acquirer_id":"acq_1","name":"Akbank","prefix":"akbank","required_fields":["merchant","terminal"],"optional_fields":["password"],"defaults":{"payment_mode":"auth","main":false,"marketplace":false,"force_three_d":false,"credentials":{"env_mode":"TEST"}}}]}`))
 			default:
 				w.WriteHeader(http.StatusNotFound)
 			}
@@ -686,6 +742,12 @@ func TestVposMethods(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, cardRes.Items, 1)
 		assert.Equal(t, "visa", cardRes.Items[0].ID)
+
+		templateRes, err := api.ListVposAcquirerTemplates(context.Background())
+		require.NoError(t, err)
+		assert.Len(t, templateRes.Items, 1)
+		assert.Equal(t, "akbank", templateRes.Items[0].Prefix)
+		assert.Equal(t, "TEST", templateRes.Items[0].Defaults.Credentials["env_mode"])
 	})
 }
 

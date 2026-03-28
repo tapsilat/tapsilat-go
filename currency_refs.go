@@ -9,6 +9,10 @@ import (
 
 var uuidRefRegex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`)
 
+func (t *API) ResolveCurrencyID(ctx context.Context, ref string) (string, error) {
+	return t.normalizeCurrencyID(ctx, ref)
+}
+
 func (t *API) normalizeCurrencyID(ctx context.Context, ref string) (string, error) {
 	trimmedRef := strings.TrimSpace(ref)
 	if trimmedRef == "" {
@@ -115,4 +119,11 @@ func cloneStringMap(values map[string]string) map[string]string {
 		cloned[key] = value
 	}
 	return cloned
+}
+
+func (t *API) invalidateCurrencyCache() {
+	t.currencyRefsMu.Lock()
+	t.currencyIDsByUnit = nil
+	t.currencyCacheReady = false
+	t.currencyRefsMu.Unlock()
 }

@@ -763,6 +763,45 @@ type OrganizationCurrenciesResponse struct {
 	Currencies []OrganizationCurrency `json:"currencies,omitempty"`
 }
 
+type OrganizationCurrencyPresetsResponse struct {
+	Items []OrganizationCurrencyPreset `json:"items,omitempty"`
+}
+
+type OrganizationCurrencyPreset struct {
+	CurrencyCode string `json:"currency_code,omitempty"`
+	CurrencyUnit string `json:"currency_unit,omitempty"`
+	Name         string `json:"name,omitempty"`
+	MinorUnit    int    `json:"minor_unit,omitempty"`
+}
+
+type CreateOrganizationCurrencyResponse struct {
+	Code     uint64               `json:"code,omitempty"`
+	Message  string               `json:"message,omitempty"`
+	Created  bool                 `json:"created,omitempty"`
+	Currency OrganizationCurrency `json:"currency,omitempty"`
+}
+
+type VposAcquirerTemplateListResponse struct {
+	Items []VposAcquirerTemplate `json:"items,omitempty"`
+}
+
+type VposAcquirerTemplate struct {
+	AcquirerID     string                       `json:"acquirer_id,omitempty"`
+	Name           string                       `json:"name,omitempty"`
+	Prefix         string                       `json:"prefix,omitempty"`
+	RequiredFields []string                     `json:"required_fields,omitempty"`
+	OptionalFields []string                     `json:"optional_fields,omitempty"`
+	Defaults       VposAcquirerTemplateDefaults `json:"defaults,omitempty"`
+}
+
+type VposAcquirerTemplateDefaults struct {
+	PaymentMode string            `json:"payment_mode,omitempty"`
+	Main        bool              `json:"main,omitempty"`
+	Marketplace bool              `json:"marketplace,omitempty"`
+	ForceThreeD bool              `json:"force_three_d,omitempty"`
+	Credentials map[string]string `json:"credentials,omitempty"`
+}
+
 type OrganizationCurrency struct {
 	ID           string `json:"id,omitempty"`
 	Name         string `json:"name,omitempty"`
