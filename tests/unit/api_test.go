@@ -61,7 +61,7 @@ func TestRefundOrder(t *testing.T) {
 	t.Run("RefundOrderCreation", func(t *testing.T) {
 		refund := tapsilat.RefundOrder{
 			ReferenceID: "test_ref_123",
-			Amount:      "100.50",
+			Amount:      100.50,
 		}
 
 		assert.Equal(t, "test_ref_123", refund.ReferenceID)
