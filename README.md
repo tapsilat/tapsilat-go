@@ -26,6 +26,64 @@ func main() {
 }
 ```
 
+## Local End-to-End Validation (Panel + SDK)
+
+Use this flow to validate newly added submerchant/vpos-related SDK APIs against local `panel/backend`.
+
+- Start local stack from `panel/backend`:
+
+```bash
+make compose
+```
+
+- Open `http://localhost:8080`, login, and generate API key/secret.
+
+- In `tapsilat-go`, run local E2E script:
+
+```bash
+chmod +x scripts/local_e2e.sh
+TAPSILAT_API_KEY="<ui_api_key>" \
+TAPSILAT_API_SECRET="<ui_api_secret>" \
+TAPSILAT_IT_SUBMERCHANT_ID="<submerchant_id>" \
+TAPSILAT_IT_SUBORGANIZATION_ID="<suborganization_id>" \
+scripts/local_e2e.sh
+```
+
+Optional:
+
+- Reuse an existing token: set `TAPSILAT_API_TOKEN`.
+- Start stack from script: `scripts/local_e2e.sh --start-stack`.
+- Run only smoke: `scripts/local_e2e.sh --smoke-only`.
+- Run only integration: `scripts/local_e2e.sh --integration-only`.
+- Auto-create submerchant + resolve suborganization IDs before tests:
+
+```bash
+TAPSILAT_API_KEY="<ui_api_key>" \
+TAPSILAT_API_SECRET="<ui_api_secret>" \
+scripts/local_e2e.sh --bootstrap-submerchant
+```
+
+- Auto-create VPOS + attach it to submerchant via `vpos-submerchant` mapping:
+
+```bash
+TAPSILAT_API_KEY="<ui_api_key>" \
+TAPSILAT_API_SECRET="<ui_api_secret>" \
+scripts/local_e2e.sh --bootstrap-submerchant --bootstrap-vpos
+```
+
+This writes IDs to `/tmp/tapsilat_local_e2e_ids.env` (override with `BOOTSTRAP_OUTPUT_FILE`).
+
+- `BOOTSTRAP_CREATED_SUBMERCHANT_ID` / `BOOTSTRAP_CREATED_SUBORGANIZATION_ID`: raw IDs created/discovered during bootstrap.
+- `BOOTSTRAP_CREATED_VPOS_ID` / `BOOTSTRAP_CREATED_VPOS_SUBMERCHANT_ID`: raw VPOS and mapping IDs created during VPOS bootstrap.
+- `TAPSILAT_SMOKE_*` and `TAPSILAT_IT_*`: effective IDs used for tests.
+
+If reverse mapping is not yet consistent in backend, script continues with submerchant-only smoke assertions and leaves integration IDs empty instead of failing immediately.
+
+Notes:
+
+- Script sets `User-Agent: Go-http-client/1.1` while generating token to match SDK request context and avoid local auth mismatch.
+- Integration test requires `TAPSILAT_IT_SUBMERCHANT_ID` and `TAPSILAT_IT_SUBORGANIZATION_ID`; otherwise test code skips it.
+
 ## Context Usage
 
 All API methods require a `context.Context` parameter. This allows you to control request timeouts and cancellation:
@@ -359,7 +417,7 @@ import (
 func main() {
 	token := "TOKEN"
 	api := tapsilat.NewAPI(token)
-	
+
 	subscription := tapsilat.SubscriptionCreateRequest{
 		Amount:              100.0,
 		Currency:            "TRY",
@@ -392,7 +450,7 @@ func main() {
 			ZipCode:        "34000",
 		},
 	}
-	
+
 	response, err := api.CreateSubscription(context.Background(), subscription)
 	if err != nil {
 		panic(err)
@@ -416,12 +474,12 @@ import (
 func main() {
 	token := "TOKEN"
 	api := tapsilat.NewAPI(token)
-	
+
 	payload := tapsilat.SubscriptionGetRequest{
 		ReferenceID: "subscription_reference_id",
 		// Or use ExternalReferenceID: "ext_sub_123",
 	}
-	
+
 	subscription, err := api.GetSubscription(context.Background(), payload)
 	if err != nil {
 		panic(err)
@@ -447,22 +505,22 @@ import (
 func main() {
 	token := "TOKEN"
 	api := tapsilat.NewAPI(token)
-	
+
 	// Get first page with 10 items per page
 	subscriptions, err := api.ListSubscriptions(context.Background(), 1, 10)
 	if err != nil {
 		panic(err)
 	}
-	
+
 	println("Total subscriptions:", subscriptions.Total)
 	println("Total pages:", subscriptions.TotalPages)
-	
+
 	// Convert rows to subscription items
 	if subscriptions.Rows != nil {
 		rowsJSON, _ := json.Marshal(subscriptions.Rows)
 		var items []tapsilat.SubscriptionListItem
 		json.Unmarshal(rowsJSON, &items)
-		
+
 		for _, item := range items {
 			println("Subscription:", item.Title, "- Amount:", item.Amount, "- Status:", item.PaymentStatus)
 		}
@@ -483,12 +541,12 @@ import (
 func main() {
 	token := "TOKEN"
 	api := tapsilat.NewAPI(token)
-	
+
 	payload := tapsilat.SubscriptionCancelRequest{
 		ReferenceID: "subscription_reference_id",
 		// Or use ExternalReferenceID: "ext_sub_123",
 	}
-	
+
 	err := api.CancelSubscription(context.Background(), payload)
 	if err != nil {
 		panic(err)
@@ -510,11 +568,11 @@ import (
 func main() {
 	token := "TOKEN"
 	api := tapsilat.NewAPI(token)
-	
+
 	payload := tapsilat.SubscriptionRedirectRequest{
 		SubscriptionID: "subscription_id",
 	}
-	
+
 	response, err := api.RedirectSubscription(context.Background(), payload)
 	if err != nil {
 		panic(err)
@@ -567,7 +625,36 @@ All API methods now require a `context.Context` as the first parameter for bette
 - `OrderTerminate(ctx context.Context, referenceID string) (map[string]interface{}, error)`
 - `OrderManualCallback(ctx context.Context, referenceID, conversationID string) (map[string]interface{}, error)`
 - `OrderRelatedUpdate(ctx context.Context, referenceID, relatedReferenceID string) (map[string]interface{}, error)`
+- `GetOrganizationCurrencies(ctx context.Context) (OrganizationCurrenciesResponse, error)`
 - `GetOrganizationSettings(ctx context.Context) (OrganizationSettings, error)`
+
+### Management Operations
+
+- `CreateSubmerchant(ctx context.Context, payload SubmerchantCreateRequest) (SubmerchantMutationResponse, error)`
+- `GetSubmerchant(ctx context.Context, id string) (Submerchant, error)`
+- `ListSubmerchants(ctx context.Context, page, perPage int) (SubmerchantListResponse, error)`
+- `UpdateSubmerchant(ctx context.Context, id string, payload SubmerchantUpdateRequest) (SubmerchantMutationResponse, error)`
+- `DeleteSubmerchant(ctx context.Context, id string) (SubmerchantMutationResponse, error)`
+- `GetSuborganizations(ctx context.Context, page, perPage int) (SuborganizationListResponse, error)`
+- `GetSuborganization(ctx context.Context, id string) (SuborganizationListItem, error)`
+- `GetSuborganizationDetail(ctx context.Context, id string) (SuborganizationDetail, error)`
+- `GetSuborganizationBySubmerchant(ctx context.Context, submerchantID string) (SubmerchantSuborganizationMapping, error)`
+- `GetSubmerchantBySuborganization(ctx context.Context, suborganizationID string) (SuborganizationSubmerchantMapping, error)`
+- `ListVpos(ctx context.Context, page, perPage int) (VposListResponse, error)`
+- `ListVposWithFilter(ctx context.Context, page, perPage int, filter VposListFilter) (VposListResponse, error)`
+- `CreateVpos(ctx context.Context, payload VposCreateRequest) (VposMutationResponse, error)`
+- `GetVpos(ctx context.Context, id string) (Vpos, error)`
+- `UpdateVpos(ctx context.Context, id string, payload VposUpdateRequest) (VposMutationResponse, error)`
+- `DeleteVpos(ctx context.Context, id string) (VposMutationResponse, error)`
+- `ListVposAcquirers(ctx context.Context) (VposAcquirerListResponse, error)`
+- `ListCardSchemes(ctx context.Context) (CardSchemeListResponse, error)`
+- `ListVposSubmerchants(ctx context.Context, page, perPage int, vposID, externalReferenceID string) (VposSubmerchantListResponse, error)`
+- `CreateVposSubmerchant(ctx context.Context, payload VposSubmerchantCreateRequest) (VposSubmerchantMutationResponse, error)`
+- `GetVposSubmerchant(ctx context.Context, id string) (VposSubmerchant, error)`
+- `UpdateVposSubmerchant(ctx context.Context, id string, payload VposSubmerchantUpdateRequest) (VposSubmerchantMutationResponse, error)`
+- `DeleteVposSubmerchant(ctx context.Context, id string) (VposSubmerchantMutationResponse, error)`
+
+`SubmerchantCreateRequest.CurrencyID`, `SubmerchantUpdateRequest.CurrencyID`, `VposCreateRequest.Currencies`, and `VposUpdateRequest.Currencies` accept either canonical currency UUIDs or organization `currency_unit` values such as `TRY`/`USD`. The SDK resolves non-UUID refs to UUIDs before sending requests.
 
 ## Testing
 
@@ -583,6 +670,9 @@ make test-unit
 # Run only integration tests (requires TAPSILAT_TOKEN)
 make test-integration
 
+# Run smoke tests against local/sandbox panel
+make test-smoke
+
 # Run tests with coverage
 make test-coverage
 
@@ -594,12 +684,39 @@ make test-api
 
 ### Test Environment Setup
 
-For integration tests, set your API token:
+For integration tests, set backend verification environment variables:
 
 ```bash
-export TAPSILAT_TOKEN=your_test_token_here
-make test-integration
+export TAPSILAT_IT_ENDPOINT=http://localhost:3001/api/v1
+export TAPSILAT_IT_TOKEN=your_token_here
+export TAPSILAT_IT_SUBMERCHANT_ID=your_submerchant_id
+export TAPSILAT_IT_SUBORGANIZATION_ID=your_suborganization_id
+export TAPSILAT_IT_VPOS_ID=optional_vpos_id
+go test -v ./tests/integration -run TestBackendConsistency_SubmerchantSuborganizationAndScopedVpos
 ```
+
+This integration test validates real backend behavior via SDK calls:
+
+- submerchant <-> suborganization mapping consistency (both directions)
+- suborganization-scoped VPOS listing consistency
+- optional `vpos_id` read + `ListVposSubmerchants` scope validation
+
+For smoke tests, set endpoint/token (and optionally sample ids):
+
+```bash
+export TAPSILAT_SMOKE_ENDPOINT=http://localhost:3001/api/v1
+export TAPSILAT_SMOKE_TOKEN=your_token_here
+export TAPSILAT_SMOKE_SUBMERCHANT_ID=
+export TAPSILAT_SMOKE_VPOS_ID=
+export TAPSILAT_SMOKE_SUBORGANIZATION_ID=
+make test-smoke
+```
+
+When optional IDs are provided, smoke coverage also verifies:
+
+- submerchant <-> suborganization mapping reads
+- scoped `ListVposWithFilter(..., VposListFilter{SuborganizationID: ...})`
+- `ListVposSubmerchants` filtered by `vpos_id`
 
 ### Development Setup
 
@@ -615,7 +732,7 @@ make dev-setup
 
 ## Project Structure
 
-```
+```text
 tapsilat-go/
 ├── tapsilat.go          # Main API client
 ├── dtos.go              # Data transfer objects
@@ -627,6 +744,8 @@ tapsilat-go/
 │   │   └── api_test.go
 │   └── integration/     # Integration tests
 │       └── integration_test.go
+│   └── smoke/           # Local/sandbox smoke tests
+│       └── smoke_test.go
 ├── Makefile             # Build and test commands
 ├── .env.example         # Environment variables template
 └── README.md
@@ -639,18 +758,35 @@ The SDK provides structured error handling:
 ```go
 response, err := api.CreateOrder(context.Background(), order)
 if err != nil {
-    // Check if it's a validation error
-    if validationErr, ok := err.(*tapsilat.ValidationError); ok {
-        fmt.Printf("Validation Error: %s (Code: %d)\n",
-            validationErr.Message, validationErr.Code)
-        return
-    }
+	var validationErr *tapsilat.ValidationError
+	if errors.As(err, &validationErr) {
+		fmt.Printf("Validation Error: %s (Code: %d)\n", validationErr.Message, validationErr.Code)
+		return
+	}
 
-    // Handle other errors
-    fmt.Printf("API Error: %s\n", err.Error())
-    return
+	var apiErr *tapsilat.APIError
+	if errors.As(err, &apiErr) {
+		fmt.Printf("API Error: status=%d code=%s message=%s raw=%s\n",
+			apiErr.StatusCode,
+			apiErr.Code,
+			apiErr.Message,
+			apiErr.RawBody,
+		)
+		return
+	}
+
+	fmt.Printf("Unexpected Error: %s\n", err.Error())
+	return
 }
 ```
+
+`APIError` normalizes HTTP/API failures into these fields:
+
+- `StatusCode`: HTTP status code
+- `Status`: API status field if present, otherwise HTTP status text
+- `Code`: API error code if present
+- `Message`: API `message` or `error` field if present
+- `RawBody`: original response body for fallback debugging
 
 ## Contributing
 
