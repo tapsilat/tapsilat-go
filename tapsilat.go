@@ -558,3 +558,25 @@ func (t *API) RedirectSubscription(ctx context.Context, payload SubscriptionRedi
 	err := t.post(ctx, "/subscription/redirect", payload, &response)
 	return response, err
 }
+
+// TokenizeCard tokenizes a card and returns 3D secure form details when required.
+func (t *API) TokenizeCard(ctx context.Context, payload CardTokenizeRequest) (CardTokenizeResponse, error) {
+	var response CardTokenizeResponse
+	err := t.post(ctx, "/tokenization/card/tokenize", payload, &response)
+	return response, err
+}
+
+// ListSavedCards returns a paginated list of saved (tokenized) cards.
+func (t *API) ListSavedCards(ctx context.Context, page, perPage int) (ListSavedCardsResponse, error) {
+	var response ListSavedCardsResponse
+	path := fmt.Sprintf("/tokenization/card/list?page=%d&per_page=%d", page, perPage)
+	err := t.get(ctx, path, &response)
+	return response, err
+}
+
+// DeleteSavedCard deletes a saved (tokenized) card by its id.
+func (t *API) DeleteSavedCard(ctx context.Context, id string) (DeleteSavedCardResponse, error) {
+	var response DeleteSavedCardResponse
+	err := t.delete(ctx, "/tokenization/card/"+id, &response)
+	return response, err
+}

@@ -870,3 +870,151 @@ func TestMappingHelpers(t *testing.T) {
 		assert.Equal(t, "sub_1", res.SubmerchantID)
 	})
 }
+
+func TestTokenizeCard(t *testing.T) {
+	t.Run("SendsExpectedRequestAndParsesResponse", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPost, r.Method)
+			assert.Equal(t, "/tokenization/card/tokenize", r.URL.Path)
+			assert.Equal(t, "Bearer token_tok", r.Header.Get("Authorization"))
+			assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+
+			body, err := io.ReadAll(r.Body)
+			require.NoError(t, err)
+			assert.JSONEq(t, `{
+				"card_number":"5526080000000006",
+				"holder_name":"John Doe",
+				"expiry_month":"12",
+				"expiry_year":"2030",
+				"cvv":"123",
+				"name":"My Test Card",
+				"default":true,
+				"mode":1
+			}`, string(body))
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{
+				"threedform_url":"https://3d.example/form",
+				"threedform_html":"<html></html>",
+				"is_success":true,
+				"message":"ok",
+				"status_code":"200",
+				"order_reference_id":"ord_1",
+				"card_id":"card_1"
+			}`))
+		}))
+		defer server.Close()
+
+		api := tapsilat.NewCustomAPI(server.URL, "token_tok")
+		res, err := api.TokenizeCard(context.Background(), tapsilat.CardTokenizeRequest{
+			CardNumber:  "5526080000000006",
+			HolderName:  "John Doe",
+			ExpiryMonth: "12",
+			ExpiryYear:  "2030",
+			CVV:         "123",
+			Name:        "My Test Card",
+			Default:     true,
+			Mode:        1,
+		})
+		require.NoError(t, err)
+		assert.True(t, res.IsSuccess)
+		assert.Equal(t, "https://3d.example/form", res.ThreedformURL)
+		assert.Equal(t, "ord_1", res.OrderReferenceID)
+		assert.Equal(t, "card_1", res.CardID)
+	})
+
+	t.Run("ReturnsErrorForHttpFailure", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"error":"invalid_card"}`))
+		}))
+		defer server.Close()
+
+		api := tapsilat.NewCustomAPI(server.URL, "token_tok")
+		_, err := api.TokenizeCard(context.Background(), tapsilat.CardTokenizeRequest{})
+		require.Error(t, err)
+
+		var apiErr *tapsilat.APIError
+		require.ErrorAs(t, err, &apiErr)
+		assert.Equal(t, http.StatusBadRequest, apiErr.StatusCode)
+	})
+}
+
+func TestListSavedCards(t *testing.T) {
+	t.Run("SendsExpectedRequestAndParsesResponse", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodGet, r.Method)
+			assert.Equal(t, "/tokenization/card/list", r.URL.Path)
+			assert.Equal(t, "2", r.URL.Query().Get("page"))
+			assert.Equal(t, "5", r.URL.Query().Get("per_page"))
+			assert.Equal(t, "Bearer token_lc", r.Header.Get("Authorization"))
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{
+				"page":2,
+				"per_page":5,
+				"total":1,
+				"total_pages":1,
+				"rows":[{"id":"card_1","name":"My Test Card","default":true}]
+			}`))
+		}))
+		defer server.Close()
+
+		api := tapsilat.NewCustomAPI(server.URL, "token_lc")
+		res, err := api.ListSavedCards(context.Background(), 2, 5)
+		require.NoError(t, err)
+		assert.Equal(t, int64(2), res.Page)
+		assert.Equal(t, int64(5), res.PerPage)
+		assert.Equal(t, int64(1), res.Total)
+		require.Len(t, res.Rows, 1)
+		assert.Equal(t, "card_1", res.Rows[0].ID)
+		assert.True(t, res.Rows[0].Default)
+	})
+
+	t.Run("ReturnsErrorForHttpFailure", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusUnauthorized)
+			_, _ = w.Write([]byte(`{"error":"unauthorized"}`))
+		}))
+		defer server.Close()
+
+		api := tapsilat.NewCustomAPI(server.URL, "token_lc")
+		_, err := api.ListSavedCards(context.Background(), 1, 10)
+		require.Error(t, err)
+	})
+}
+
+func TestDeleteSavedCard(t *testing.T) {
+	t.Run("SendsExpectedRequestAndParsesResponse", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodDelete, r.Method)
+			assert.Equal(t, "/tokenization/card/card_1", r.URL.Path)
+			assert.Equal(t, "Bearer token_dc", r.Header.Get("Authorization"))
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"success":true,"message":"deleted"}`))
+		}))
+		defer server.Close()
+
+		api := tapsilat.NewCustomAPI(server.URL, "token_dc")
+		res, err := api.DeleteSavedCard(context.Background(), "card_1")
+		require.NoError(t, err)
+		assert.True(t, res.Success)
+		assert.Equal(t, "deleted", res.Message)
+	})
+
+	t.Run("ReturnsErrorForHttpFailure", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(`{"error":"not_found"}`))
+		}))
+		defer server.Close()
+
+		api := tapsilat.NewCustomAPI(server.URL, "token_dc")
+		_, err := api.DeleteSavedCard(context.Background(), "missing")
+		require.Error(t, err)
+	})
+}

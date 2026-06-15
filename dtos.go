@@ -1071,3 +1071,52 @@ type SubscriptionListItem struct {
 type SubscriptionRedirectResponse struct {
 	URL string `json:"url,omitempty"`
 }
+
+// CardTokenizeRequest represents the request to tokenize a card
+type CardTokenizeRequest struct {
+	CardNumber  string `json:"card_number"`
+	HolderName  string `json:"holder_name"`
+	ExpiryMonth string `json:"expiry_month"`
+	ExpiryYear  string `json:"expiry_year"`
+	CVV         string `json:"cvv"`
+	Name        string `json:"name,omitempty"`
+	Default     bool   `json:"default,omitempty"`
+	Mode        int    `json:"mode,omitempty"`
+}
+
+// CardTokenizeResponse represents the response from tokenizing a card
+type CardTokenizeResponse struct {
+	ThreedformURL    string `json:"threedform_url,omitempty"`
+	ThreedformHTML   string `json:"threedform_html,omitempty"`
+	IsSuccess        bool   `json:"is_success,omitempty"`
+	Message          string `json:"message,omitempty"`
+	StatusCode       string `json:"status_code,omitempty"`
+	ErrorCode        string `json:"error_code,omitempty"`
+	OrderReferenceID string `json:"order_reference_id,omitempty"`
+	CardID           string `json:"card_id,omitempty"`
+}
+
+// SavedCard represents a tokenized card stored on the account
+type SavedCard struct {
+	ID         string `json:"id,omitempty"`
+	Name       string `json:"name,omitempty"`
+	HolderName string `json:"holder_name,omitempty"`
+	CardNumber string `json:"card_number,omitempty"`
+	CardBrand  string `json:"card_brand,omitempty"`
+	Default    bool   `json:"default,omitempty"`
+}
+
+// ListSavedCardsResponse represents a paginated list of saved cards
+type ListSavedCardsResponse struct {
+	Page       int64       `json:"page,omitempty"`
+	PerPage    int64       `json:"per_page,omitempty"`
+	Total      int64       `json:"total,omitempty"`
+	TotalPages int64       `json:"total_pages,omitempty"`
+	Rows       []SavedCard `json:"rows,omitempty"`
+}
+
+// DeleteSavedCardResponse represents the response from deleting a saved card
+type DeleteSavedCardResponse struct {
+	Success bool   `json:"success,omitempty"`
+	Message string `json:"message,omitempty"`
+}
