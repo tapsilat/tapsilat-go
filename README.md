@@ -604,11 +604,11 @@ All API methods now require a `context.Context` as the first parameter for bette
 
 ### Payment Terms Operations
 
-- `CreateOrderTerm(ctx context.Context, term OrderPaymentTermCreateDTO) (map[string]interface{}, error)`
-- `UpdateOrderTerm(ctx context.Context, term OrderPaymentTermUpdateDTO) (map[string]interface{}, error)`
-- `GetOrderTerm(ctx context.Context, termReferenceID string) (map[string]interface{}, error)`
-- `DeleteOrderTerm(ctx context.Context, orderID, termReferenceID string) (map[string]interface{}, error)`
-- `RefundOrderTerm(ctx context.Context, term OrderTermRefundRequest) (map[string]interface{}, error)`
+- `CreateOrderTerm(ctx context.Context, term OrderPaymentTermCreateDTO) (map[string]any, error)`
+- `UpdateOrderTerm(ctx context.Context, term OrderPaymentTermUpdateDTO) (map[string]any, error)`
+- `GetOrderTerm(ctx context.Context, termReferenceID string) (map[string]any, error)`
+- `DeleteOrderTerm(ctx context.Context, orderID, termReferenceID string) (map[string]any, error)`
+- `RefundOrderTerm(ctx context.Context, term OrderTermRefundRequest) (map[string]any, error)`
 
 ### Subscription Operations
 
@@ -620,11 +620,11 @@ All API methods now require a `context.Context` as the first parameter for bette
 
 ### Utility Operations
 
-- `GetOrderTransactions(ctx context.Context, referenceID string) (map[string]interface{}, error)`
-- `GetOrderPaymentDetails(ctx context.Context, referenceID, conversationID string) (map[string]interface{}, error)`
-- `OrderTerminate(ctx context.Context, referenceID string) (map[string]interface{}, error)`
-- `OrderManualCallback(ctx context.Context, referenceID, conversationID string) (map[string]interface{}, error)`
-- `OrderRelatedUpdate(ctx context.Context, referenceID, relatedReferenceID string) (map[string]interface{}, error)`
+- `GetOrderTransactions(ctx context.Context, referenceID string) (map[string]any, error)`
+- `GetOrderPaymentDetails(ctx context.Context, referenceID string) (map[string]any, error)`
+- `OrderTerminate(ctx context.Context, referenceID string) (map[string]any, error)`
+- `OrderManualCallback(ctx context.Context, referenceID, conversationID string) (map[string]any, error)`
+- `OrderRelatedUpdate(ctx context.Context, referenceID, relatedReferenceID string) (map[string]any, error)`
 - `GetOrganizationCurrencies(ctx context.Context) (OrganizationCurrenciesResponse, error)`
 - `GetOrganizationSettings(ctx context.Context) (OrganizationSettings, error)`
 
