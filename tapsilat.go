@@ -216,17 +216,9 @@ func (t *API) GetOrderStatus(ctx context.Context, orderReferenceID string) (Orde
 	return orderStatus, err
 }
 
-func (t *API) GetOrderPaymentDetails(ctx context.Context, referenceID, conversationID string) (map[string]any, error) {
+func (t *API) GetOrderPaymentDetails(ctx context.Context, referenceID string) (map[string]any, error) {
 	var response map[string]any
-	path := "/order/payment-details"
-
-	if referenceID != "" {
-		path += "?reference_id=" + referenceID
-	} else if conversationID != "" {
-		path += "?conversation_id=" + conversationID
-	}
-
-	err := t.get(ctx, path, &response)
+	err := t.get(ctx, "/order/"+referenceID+"/payment-details", &response)
 	return response, err
 }
 
