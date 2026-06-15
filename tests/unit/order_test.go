@@ -286,22 +286,21 @@ func TestPaymentTermDTOs(t *testing.T) {
 	})
 
 	t.Run("OrderPaymentTermUpdateDTO", func(t *testing.T) {
-		amount := 150.0
-		required := false
-
 		updateDTO := tapsilat.OrderPaymentTermUpdateDTO{
 			TermReferenceID: "term_123",
-			Amount:          &amount,
+			Amount:          150.0,
 			DueDate:         "2024-02-15",
-			Required:        &required,
-			Data:            "updated_data",
+			Required:        false,
+			Status:          "updated_status",
+			TermSequence:    2,
 		}
 
 		assert.Equal(t, "term_123", updateDTO.TermReferenceID)
-		assert.Equal(t, 150.0, *updateDTO.Amount)
+		assert.Equal(t, 150.0, updateDTO.Amount)
 		assert.Equal(t, "2024-02-15", updateDTO.DueDate)
-		assert.False(t, *updateDTO.Required)
-		assert.Equal(t, "updated_data", updateDTO.Data)
+		assert.False(t, updateDTO.Required)
+		assert.Equal(t, "updated_status", updateDTO.Status)
+		assert.Equal(t, 2, updateDTO.TermSequence)
 	})
 
 	t.Run("OrderTermRefundRequest", func(t *testing.T) {
