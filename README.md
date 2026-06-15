@@ -607,7 +607,8 @@ All API methods now require a `context.Context` as the first parameter for bette
 - `CreateOrderTerm(ctx context.Context, term OrderPaymentTermCreateDTO) (map[string]interface{}, error)`
 - `UpdateOrderTerm(ctx context.Context, term OrderPaymentTermUpdateDTO) (map[string]interface{}, error)`
 - `GetOrderTerm(ctx context.Context, termReferenceID string) (map[string]interface{}, error)`
-- `DeleteOrderTerm(ctx context.Context, orderID, termReferenceID string) (map[string]interface{}, error)`
+- `DeleteOrderTerm(ctx context.Context, payload OrderPaymentTermDeleteDTO) (map[string]interface{}, error)`
+- `RefundOrderTerm(ctx context.Context, term OrderTermRefundRequest) (map[string]interface{}, error)`
 - `RefundOrderTerm(ctx context.Context, term OrderTermRefundRequest) (map[string]interface{}, error)`
 
 ### Subscription Operations
@@ -621,12 +622,47 @@ All API methods now require a `context.Context` as the first parameter for bette
 ### Utility Operations
 
 - `GetOrderTransactions(ctx context.Context, referenceID string) (map[string]interface{}, error)`
-- `GetOrderPaymentDetails(ctx context.Context, referenceID, conversationID string) (map[string]interface{}, error)`
+- `GetOrderPaymentDetails(ctx context.Context, payload OrderPaymentDetailDTO) (map[string]interface{}, error)`
+- `GetOrderPaymentDetailsByID(ctx context.Context, referenceID string) (map[string]interface{}, error)`
 - `OrderTerminate(ctx context.Context, referenceID string) (map[string]interface{}, error)`
-- `OrderManualCallback(ctx context.Context, referenceID, conversationID string) (map[string]interface{}, error)`
-- `OrderRelatedUpdate(ctx context.Context, referenceID, relatedReferenceID string) (map[string]interface{}, error)`
+- `OrderManualCallback(ctx context.Context, payload OrderManualCallbackDTO) (map[string]interface{}, error)`
+- `OrderCallback(ctx context.Context, id string) (map[string]interface{}, error)`
+- `OrderRelatedUpdate(ctx context.Context, payload OrderRelatedReferenceDTO) (map[string]interface{}, error)`
+- `OrderAccounting(ctx context.Context, payload OrderAccountingRequest) (map[string]interface{}, error)`
+- `OrderPostAuth(ctx context.Context, payload OrderPostAuthRequest) (map[string]interface{}, error)`
+- `OrderPaymentOptionsUpdate(ctx context.Context, payload OrderPaymentOptionsUpdateDTO) (map[string]interface{}, error)`
+- `SplitOrderItemPayment(ctx context.Context, payload SplitOrderItemPaymentDTO) (map[string]interface{}, error)`
+- `OrderVposQuery(ctx context.Context, id string) (map[string]interface{}, error)`
+- `AddBasketItem(ctx context.Context, payload AddBasketItemRequest) (map[string]interface{}, error)`
+- `RemoveBasketItem(ctx context.Context, payload RemoveBasketItemRequest) (map[string]interface{}, error)`
+- `UpdateBasketItem(ctx context.Context, payload UpdateBasketItemRequest) (map[string]interface{}, error)`
+
+### System Operations
+
+- `GetSystemOrderStatuses(ctx context.Context) (map[string]interface{}, error)`
+- `GetSystemBasketItemTypes(ctx context.Context) (map[string]interface{}, error)`
+- `GetSystemErrorCodes(ctx context.Context) (map[string]interface{}, error)`
+- `GetSystemPaymentTermStatuses(ctx context.Context) (map[string]interface{}, error)`
+- `GetSystemProductTypes(ctx context.Context) (map[string]interface{}, error)`
+- `GetSystemShortcutTypes(ctx context.Context) (map[string]interface{}, error)`
+- `GetSystemTransactionPaymentTypes(ctx context.Context) (map[string]interface{}, error)`
+- `GetSystemTransactionPurposes(ctx context.Context) (map[string]interface{}, error)`
+- `GetSystemTransactionStatuses(ctx context.Context) (map[string]interface{}, error)`
+
+### Organization Operations
 - `GetOrganizationCurrencies(ctx context.Context) (OrganizationCurrenciesResponse, error)`
 - `GetOrganizationSettings(ctx context.Context) (OrganizationSettings, error)`
+- `GetOrganizationCallback(ctx context.Context) (map[string]interface{}, error)`
+- `UpdateOrganizationCallback(ctx context.Context, payload CallbackURLDTO) (map[string]interface{}, error)`
+- `CreateOrganizationBusiness(ctx context.Context, payload OrgCreateBusinessRequest) (map[string]interface{}, error)`
+- `GetOrganizationLimitUser(ctx context.Context, payload GetUserLimitRequest) (map[string]interface{}, error)`
+- `SetOrganizationLimitUser(ctx context.Context, payload SetLimitUserRequest) (map[string]interface{}, error)`
+- `GetOrganizationLimits(ctx context.Context) (map[string]interface{}, error)`
+- `GetOrganizationMeta(ctx context.Context, name string) (map[string]interface{}, error)`
+- `GetOrganizationScopes(ctx context.Context) (map[string]interface{}, error)`
+- `CreateOrganizationUser(ctx context.Context, payload OrgCreateUserReq) (map[string]interface{}, error)`
+- `VerifyOrganizationUser(ctx context.Context, payload OrgUserVerifyReq) (map[string]interface{}, error)`
+- `VerifyOrganizationUserMobile(ctx context.Context, payload OrgUserMobileVerifyReq) (map[string]interface{}, error)`
 
 ### Management Operations
 
