@@ -377,11 +377,18 @@ type OrderPaymentTermCreateDTO struct {
 }
 
 type OrderPaymentTermUpdateDTO struct {
-	TermReferenceID string   `json:"term_reference_id"`
-	Amount          *float64 `json:"amount,omitempty"`
-	DueDate         string   `json:"due_date,omitempty"`
-	Required        *bool    `json:"required,omitempty"`
-	Data            string   `json:"data,omitempty"`
+	Amount          float64 `json:"amount"`
+	DueDate         string  `json:"due_date"`
+	PaidDate        string  `json:"paid_date,omitempty"`
+	Required        bool    `json:"required"`
+	Status          string  `json:"status"`
+	TermReferenceID string  `json:"term_reference_id"`
+	TermSequence    int     `json:"term_sequence"`
+}
+
+type OrderPaymentTermDeleteDTO struct {
+	OrderID         string `json:"order_id"`
+	TermReferenceID string `json:"term_reference_id"`
 }
 
 type OrderTermRefundRequest struct {
@@ -1070,4 +1077,103 @@ type SubscriptionListItem struct {
 // SubscriptionRedirectResponse represents the response from redirecting a subscription
 type SubscriptionRedirectResponse struct {
 	URL string `json:"url,omitempty"`
+}
+
+type OrderAccountingRequest struct {
+	OrderReferenceID string `json:"order_reference_id"`
+}
+
+type OrderPostAuthRequest struct {
+	Amount      float64 `json:"amount"`
+	ReferenceID string  `json:"reference_id"`
+}
+
+type OrderPaymentDetailDTO struct {
+	ReferenceID    string `json:"reference_id"`
+	ConversationID string `json:"conversation_id,omitempty"`
+}
+
+type OrderManualCallbackDTO struct {
+	ReferenceID    string `json:"reference_id"`
+	ConversationID string `json:"conversation_id,omitempty"`
+}
+
+type OrderRelatedReferenceDTO struct {
+	ReferenceID        string `json:"reference_id"`
+	RelatedReferenceID string `json:"related_reference_id"`
+}
+
+type OrderPaymentOptionsUpdateDTO struct {
+	PaymentOptions []string `json:"payment_options"`
+	ReferenceID    string   `json:"reference_id"`
+}
+
+type SplitOrderItemPaymentDTO struct {
+	Amount             float64 `json:"amount"`
+	OrderID            string  `json:"order_id"`
+	OrderItemPaymentID string  `json:"order_item_payment_id"`
+}
+
+type AddBasketItemRequest struct {
+	OrderReferenceID string          `json:"order_reference_id"`
+	BasketItem       OrderBasketItem `json:"basket_item"`
+}
+
+type RemoveBasketItemRequest struct {
+	OrderReferenceID string `json:"order_reference_id"`
+	BasketItemID     string `json:"basket_item_id"`
+}
+
+type UpdateBasketItemRequest struct {
+	OrderReferenceID string          `json:"order_reference_id"`
+	BasketItem       OrderBasketItem `json:"basket_item"`
+}
+
+type CallbackURLDTO struct {
+	CallbackURL       string `json:"callback_url,omitempty"`
+	CancelCallbackURL string `json:"cancel_callback_url,omitempty"`
+	FailCallbackURL   string `json:"fail_callback_url,omitempty"`
+	RefundCallbackURL string `json:"refund_callback_url,omitempty"`
+}
+
+type OrgCreateBusinessRequest struct {
+	Address        string `json:"address"`
+	BusinessName   string `json:"business_name"`
+	BusinessType   int    `json:"business_type"`
+	Email          string `json:"email"`
+	FirstName      string `json:"first_name"`
+	IdentityNumber string `json:"identity_number"`
+	LastName       string `json:"last_name"`
+	Phone          string `json:"phone"`
+	TaxNumber      string `json:"tax_number"`
+	TaxOffice      string `json:"tax_office"`
+	ZipCode        string `json:"zip_code"`
+}
+
+type GetUserLimitRequest struct {
+	UserID string `json:"user_id"`
+}
+
+type SetLimitUserRequest struct {
+	LimitID string `json:"limit_id"`
+	UserID  string `json:"user_id"`
+}
+
+type OrgCreateUserReq struct {
+	ConversationID string `json:"conversation_id"`
+	Email          string `json:"email"`
+	FirstName      string `json:"first_name"`
+	IdentityNumber string `json:"identity_number"`
+	IsMailVerified bool   `json:"is_mail_verified"`
+	LastName       string `json:"last_name"`
+	Phone          string `json:"phone"`
+	ReferenceID    string `json:"reference_id"`
+}
+
+type OrgUserVerifyReq struct {
+	UserID string `json:"user_id"`
+}
+
+type OrgUserMobileVerifyReq struct {
+	UserID string `json:"user_id"`
 }

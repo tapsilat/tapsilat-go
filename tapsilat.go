@@ -3,6 +3,9 @@ package tapsilat
 import (
 	"bytes"
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -86,12 +89,40 @@ func (t *API) get(ctx context.Context, path string, response any) error {
 	return t.do(req, response)
 }
 
+func (t *API) getWithPayload(ctx context.Context, path string, payload any, response any) error {
+	url := t.EndPoint + path
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, bytes.NewBuffer(jsonPayload))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	return t.do(req, response)
+}
+
 func (t *API) delete(ctx context.Context, path string, response any) error {
 	url := t.EndPoint + path
 	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
 	if err != nil {
 		return err
 	}
+	return t.do(req, response)
+}
+
+func (t *API) deleteWithPayload(ctx context.Context, path string, payload any, response any) error {
+	url := t.EndPoint + path
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, bytes.NewBuffer(jsonPayload))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
 	return t.do(req, response)
 }
 
@@ -216,17 +247,9 @@ func (t *API) GetOrderStatus(ctx context.Context, orderReferenceID string) (Orde
 	return orderStatus, err
 }
 
-func (t *API) GetOrderPaymentDetails(ctx context.Context, referenceID, conversationID string) (map[string]any, error) {
+func (t *API) GetOrderPaymentDetails(ctx context.Context, payload OrderPaymentDetailDTO) (map[string]any, error) {
 	var response map[string]any
-	path := "/order/payment-details"
-
-	if referenceID != "" {
-		path += "?reference_id=" + referenceID
-	} else if conversationID != "" {
-		path += "?conversation_id=" + conversationID
-	}
-
-	err := t.get(ctx, path, &response)
+	err := t.post(ctx, "/order/payment-details", payload, &response)
 	return response, err
 }
 
@@ -258,28 +281,25 @@ func (t *API) RefundAllOrder(ctx context.Context, referenceID string) (RefundCan
 // Payment Terms methods
 func (t *API) GetOrderTerm(ctx context.Context, termReferenceID string) (map[string]any, error) {
 	var response map[string]any
-	err := t.get(ctx, "/order/term/"+termReferenceID, &response)
+	err := t.get(ctx, "/order/term?term_reference_id="+termReferenceID, &response)
 	return response, err
 }
 
 func (t *API) CreateOrderTerm(ctx context.Context, term OrderPaymentTermCreateDTO) (map[string]any, error) {
 	var response map[string]any
-	err := t.post(ctx, "/order/term/create", term, &response)
+	err := t.post(ctx, "/order/term", term, &response)
 	return response, err
 }
 
-func (t *API) DeleteOrderTerm(ctx context.Context, orderID, termReferenceID string) (map[string]any, error) {
+func (t *API) DeleteOrderTerm(ctx context.Context, payload OrderPaymentTermDeleteDTO) (map[string]any, error) {
 	var response map[string]any
-	err := t.post(ctx, "/order/term/delete", map[string]string{
-		"order_id":          orderID,
-		"term_reference_id": termReferenceID,
-	}, &response)
+	err := t.deleteWithPayload(ctx, "/order/term", payload, &response)
 	return response, err
 }
 
 func (t *API) UpdateOrderTerm(ctx context.Context, term OrderPaymentTermUpdateDTO) (map[string]any, error) {
 	var response map[string]any
-	err := t.post(ctx, "/order/term/update", term, &response)
+	err := t.patch(ctx, "/order/term", term, &response)
 	return response, err
 }
 
@@ -297,25 +317,203 @@ func (t *API) OrderTerminate(ctx context.Context, referenceID string) (map[strin
 	return response, err
 }
 
-func (t *API) OrderManualCallback(ctx context.Context, referenceID, conversationID string) (map[string]any, error) {
+func (t *API) OrderManualCallback(ctx context.Context, payload OrderManualCallbackDTO) (map[string]any, error) {
 	var response map[string]any
-	payload := map[string]string{
-		"reference_id": referenceID,
-	}
-	if conversationID != "" {
-		payload["conversation_id"] = conversationID
-	}
-	err := t.post(ctx, "/order/manual-callback", payload, &response)
+	err := t.post(ctx, "/order/callback", payload, &response)
 	return response, err
 }
 
-func (t *API) OrderRelatedUpdate(ctx context.Context, referenceID, relatedReferenceID string) (map[string]any, error) {
+func (t *API) OrderRelatedUpdate(ctx context.Context, payload OrderRelatedReferenceDTO) (map[string]any, error) {
 	var response map[string]any
-	err := t.post(ctx, "/order/related-update", map[string]string{
-		"reference_id":         referenceID,
-		"related_reference_id": relatedReferenceID,
-	}, &response)
+	err := t.patch(ctx, "/order/releated", payload, &response)
 	return response, err
+}
+
+func (t *API) OrderAccounting(ctx context.Context, payload OrderAccountingRequest) (map[string]any, error) {
+	var response map[string]any
+	err := t.post(ctx, "/order/accounting", payload, &response)
+	return response, err
+}
+
+func (t *API) OrderPostAuth(ctx context.Context, payload OrderPostAuthRequest) (map[string]any, error) {
+	var response map[string]any
+	err := t.post(ctx, "/order/postauth", payload, &response)
+	return response, err
+}
+
+func (t *API) GetOrderPaymentDetailsByID(ctx context.Context, referenceID string) (map[string]any, error) {
+	var response map[string]any
+	err := t.get(ctx, "/order/"+referenceID+"/payment-details", &response)
+	return response, err
+}
+
+func (t *API) OrderPaymentOptionsUpdate(ctx context.Context, payload OrderPaymentOptionsUpdateDTO) (map[string]any, error) {
+	var response map[string]any
+	err := t.patch(ctx, "/order/payment-options", payload, &response)
+	return response, err
+}
+
+func (t *API) SplitOrderItemPayment(ctx context.Context, payload SplitOrderItemPaymentDTO) (map[string]any, error) {
+	var response map[string]any
+	err := t.post(ctx, "/order/split", payload, &response)
+	return response, err
+}
+
+func (t *API) OrderCallback(ctx context.Context, id string) (map[string]any, error) {
+	var response map[string]any
+	err := t.get(ctx, "/orders/"+id+"/callback", &response)
+	return response, err
+}
+
+func (t *API) OrderVposQuery(ctx context.Context, id string) (map[string]any, error) {
+	var response map[string]any
+	err := t.get(ctx, "/orders/"+id+"/vpos-query", &response)
+	return response, err
+}
+
+func (t *API) AddBasketItem(ctx context.Context, payload AddBasketItemRequest) (map[string]any, error) {
+	var response map[string]any
+	err := t.post(ctx, "/order/basket-item", payload, &response)
+	return response, err
+}
+
+func (t *API) RemoveBasketItem(ctx context.Context, payload RemoveBasketItemRequest) (map[string]any, error) {
+	var response map[string]any
+	err := t.deleteWithPayload(ctx, "/order/basket-item", payload, &response)
+	return response, err
+}
+
+func (t *API) UpdateBasketItem(ctx context.Context, payload UpdateBasketItemRequest) (map[string]any, error) {
+	var response map[string]any
+	err := t.patch(ctx, "/order/basket-item", payload, &response)
+	return response, err
+}
+
+func (t *API) GetSystemOrderStatuses(ctx context.Context) (map[string]any, error) {
+	var response map[string]any
+	err := t.get(ctx, "/system/order-statuses", &response)
+	return response, err
+}
+
+func (t *API) GetSystemBasketItemTypes(ctx context.Context) (map[string]any, error) {
+	var response map[string]any
+	err := t.get(ctx, "/system/basket-item-types", &response)
+	return response, err
+}
+
+func (t *API) GetSystemErrorCodes(ctx context.Context) (map[string]any, error) {
+	var response map[string]any
+	err := t.get(ctx, "/system/error-codes", &response)
+	return response, err
+}
+
+func (t *API) GetSystemPaymentTermStatuses(ctx context.Context) (map[string]any, error) {
+	var response map[string]any
+	err := t.get(ctx, "/system/payment-term-statuses", &response)
+	return response, err
+}
+
+func (t *API) GetSystemProductTypes(ctx context.Context) (map[string]any, error) {
+	var response map[string]any
+	err := t.get(ctx, "/system/product-types", &response)
+	return response, err
+}
+
+func (t *API) GetSystemShortcutTypes(ctx context.Context) (map[string]any, error) {
+	var response map[string]any
+	err := t.get(ctx, "/system/shortcut-types", &response)
+	return response, err
+}
+
+func (t *API) GetSystemTransactionPaymentTypes(ctx context.Context) (map[string]any, error) {
+	var response map[string]any
+	err := t.get(ctx, "/system/transaction-payment-types", &response)
+	return response, err
+}
+
+func (t *API) GetSystemTransactionPurposes(ctx context.Context) (map[string]any, error) {
+	var response map[string]any
+	err := t.get(ctx, "/system/transaction-purposes", &response)
+	return response, err
+}
+
+func (t *API) GetSystemTransactionStatuses(ctx context.Context) (map[string]any, error) {
+	var response map[string]any
+	err := t.get(ctx, "/system/transaction-statuses", &response)
+	return response, err
+}
+
+func (t *API) GetOrganizationCallback(ctx context.Context) (map[string]any, error) {
+	var response map[string]any
+	err := t.get(ctx, "/organization/callback", &response)
+	return response, err
+}
+
+func (t *API) UpdateOrganizationCallback(ctx context.Context, payload CallbackURLDTO) (map[string]any, error) {
+	var response map[string]any
+	err := t.patch(ctx, "/organization/callback", payload, &response)
+	return response, err
+}
+
+func (t *API) CreateOrganizationBusiness(ctx context.Context, payload OrgCreateBusinessRequest) (map[string]any, error) {
+	var response map[string]any
+	err := t.post(ctx, "/organization/business/create", payload, &response)
+	return response, err
+}
+
+func (t *API) GetOrganizationLimitUser(ctx context.Context, payload GetUserLimitRequest) (map[string]any, error) {
+	var response map[string]any
+	err := t.getWithPayload(ctx, "/organization/limit/user", payload, &response)
+	return response, err
+}
+
+func (t *API) SetOrganizationLimitUser(ctx context.Context, payload SetLimitUserRequest) (map[string]any, error) {
+	var response map[string]any
+	err := t.post(ctx, "/organization/limit/user", payload, &response)
+	return response, err
+}
+
+func (t *API) GetOrganizationLimits(ctx context.Context) (map[string]any, error) {
+	var response map[string]any
+	err := t.get(ctx, "/organization/limits", &response)
+	return response, err
+}
+
+func (t *API) GetOrganizationMeta(ctx context.Context, name string) (map[string]any, error) {
+	var response map[string]any
+	err := t.get(ctx, "/organization/meta/"+name, &response)
+	return response, err
+}
+
+func (t *API) GetOrganizationScopes(ctx context.Context) (map[string]any, error) {
+	var response map[string]any
+	err := t.get(ctx, "/organization/scopes", &response)
+	return response, err
+}
+
+func (t *API) CreateOrganizationUser(ctx context.Context, payload OrgCreateUserReq) (map[string]any, error) {
+	var response map[string]any
+	err := t.post(ctx, "/organization/user/create", payload, &response)
+	return response, err
+}
+
+func (t *API) VerifyOrganizationUser(ctx context.Context, payload OrgUserVerifyReq) (map[string]any, error) {
+	var response map[string]any
+	err := t.post(ctx, "/organization/user/verify", payload, &response)
+	return response, err
+}
+
+func (t *API) VerifyOrganizationUserMobile(ctx context.Context, payload OrgUserMobileVerifyReq) (map[string]any, error) {
+	var response map[string]any
+	err := t.post(ctx, "/organization/user/verify-mobile", payload, &response)
+	return response, err
+}
+
+func VerifyWebhook(payload, signature, secret string) bool {
+	h := hmac.New(sha256.New, []byte(secret))
+	h.Write([]byte(payload))
+	expectedSignature := "sha256=" + hex.EncodeToString(h.Sum(nil))
+	return expectedSignature == signature
 }
 
 func (t *API) GetOrganizationSettings(ctx context.Context) (OrganizationSettings, error) {
