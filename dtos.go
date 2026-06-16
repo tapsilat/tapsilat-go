@@ -130,6 +130,8 @@ type Order struct {
 	PaymentMethods      bool                 `json:"payment_methods"`
 	PaymentFailureUrl   string               `json:"payment_failure_url"`
 	PaymentSuccessUrl   string               `json:"payment_success_url"`
+	RedirectSuccessUrl  string               `json:"redirect_success_url"`
+	RedirectFailureUrl  string               `json:"redirect_failure_url"`
 	PfSubMerchant       OrderPfSubMerchant   `json:"pf_sub_merchant"`
 	ThreeDForce         bool                 `json:"three_d_force"`
 	EnabledInstallments []int                `json:"enabled_installments"`

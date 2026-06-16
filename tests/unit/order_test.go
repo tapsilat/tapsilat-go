@@ -143,6 +143,8 @@ func TestOrderCreation(t *testing.T) {
 			PaymentOptions:      []string{"credit_card", "cash"},
 			PaymentSuccessUrl:   "https://example.com/install_success_s8",
 			PaymentFailureUrl:   "https://example.com/install_failure_s8",
+			RedirectSuccessUrl:  "https://example.com/redirect_success_s8",
+			RedirectFailureUrl:  "https://example.com/redirect_failure_s8",
 		}
 
 		assert.Equal(t, 1200.00, order.Amount)
@@ -151,6 +153,8 @@ func TestOrderCreation(t *testing.T) {
 		assert.Equal(t, []string{"credit_card", "cash"}, order.PaymentOptions)
 		assert.Equal(t, "https://example.com/install_success_s8", order.PaymentSuccessUrl)
 		assert.Equal(t, "https://example.com/install_failure_s8", order.PaymentFailureUrl)
+		assert.Equal(t, "https://example.com/redirect_success_s8", order.RedirectSuccessUrl)
+		assert.Equal(t, "https://example.com/redirect_failure_s8", order.RedirectFailureUrl)
 	})
 
 	t.Run("OrderWithCheckoutDesign", func(t *testing.T) {
