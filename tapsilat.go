@@ -228,6 +228,14 @@ func (t *API) GetOrderTransactions(ctx context.Context, referenceID string) (map
 	return response, err
 }
 
+// GetOrderPayments returns the list of payments made against an order. The order
+// can be identified by its order ID, order reference ID or conversation ID.
+func (t *API) GetOrderPayments(ctx context.Context, payload GetOrderPaymentsRequest) (GetOrderPaymentsResponse, error) {
+	var response GetOrderPaymentsResponse
+	err := t.post(ctx, "/order/payments", payload, &response)
+	return response, err
+}
+
 func (t *API) CancelOrder(ctx context.Context, payload CancelOrder) (RefundCancelOrderResponse, error) {
 	var response RefundCancelOrderResponse
 	err := t.post(ctx, "/order/cancel", payload, &response)

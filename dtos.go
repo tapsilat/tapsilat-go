@@ -1120,3 +1120,29 @@ type DeleteSavedCardResponse struct {
 	Success bool   `json:"success,omitempty"`
 	Message string `json:"message,omitempty"`
 }
+
+// GetOrderPaymentsRequest represents the request to list payments of an order.
+// At least one of the identifiers should be provided.
+type GetOrderPaymentsRequest struct {
+	OrderID          string `json:"order_id,omitempty"`
+	OrderReferenceID string `json:"order_reference_id,omitempty"`
+	ConversationID   string `json:"conversation_id,omitempty"`
+}
+
+// OrderPayment represents a single payment made against an order
+type OrderPayment struct {
+	ID               string  `json:"id,omitempty"`
+	Date             string  `json:"date,omitempty"`
+	PaymentMode      string  `json:"payment_mode,omitempty"`
+	Amount           float64 `json:"amount,omitempty"`
+	MaskedCard       string  `json:"masked_card,omitempty"`
+	CardHolderName   string  `json:"card_holder_name,omitempty"`
+	Paid             bool    `json:"paid,omitempty"`
+	Type             string  `json:"type,omitempty"`
+	AcquirerResponse string  `json:"acquirer_response,omitempty"`
+}
+
+// GetOrderPaymentsResponse represents the list of payments made against an order
+type GetOrderPaymentsResponse struct {
+	Payments []OrderPayment `json:"payments,omitempty"`
+}

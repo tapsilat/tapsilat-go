@@ -1018,3 +1018,75 @@ func TestDeleteSavedCard(t *testing.T) {
 		require.Error(t, err)
 	})
 }
+
+func TestGetOrderPayments(t *testing.T) {
+	t.Run("SendsExpectedRequestAndParsesResponse", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPost, r.Method)
+			assert.Equal(t, "/order/payments", r.URL.Path)
+			assert.Equal(t, "Bearer token_op", r.Header.Get("Authorization"))
+			assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+
+			body, err := io.ReadAll(r.Body)
+			require.NoError(t, err)
+			assert.JSONEq(t, `{
+				"order_id":"ord_1",
+				"order_reference_id":"ref_1",
+				"conversation_id":"conv_1"
+			}`, string(body))
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{
+				"payments":[
+					{
+						"id":"349c9d56-65d3-4fc3-887e-cbb1f3e4dd2e",
+						"date":"2026-06-16 08:38:30",
+						"payment_mode":"auth",
+						"amount":299.99,
+						"masked_card":"55260800******0006",
+						"card_holder_name":"xxxx xxxx",
+						"paid":true,
+						"type":"card",
+						"acquirer_response":"xxxxx"
+					}
+				]
+			}`))
+		}))
+		defer server.Close()
+
+		api := tapsilat.NewCustomAPI(server.URL, "token_op")
+		res, err := api.GetOrderPayments(context.Background(), tapsilat.GetOrderPaymentsRequest{
+			OrderID:          "ord_1",
+			OrderReferenceID: "ref_1",
+			ConversationID:   "conv_1",
+		})
+		require.NoError(t, err)
+		require.Len(t, res.Payments, 1)
+		assert.Equal(t, "349c9d56-65d3-4fc3-887e-cbb1f3e4dd2e", res.Payments[0].ID)
+		assert.Equal(t, "2026-06-16 08:38:30", res.Payments[0].Date)
+		assert.Equal(t, "auth", res.Payments[0].PaymentMode)
+		assert.Equal(t, 299.99, res.Payments[0].Amount)
+		assert.Equal(t, "55260800******0006", res.Payments[0].MaskedCard)
+		assert.Equal(t, "xxxx xxxx", res.Payments[0].CardHolderName)
+		assert.True(t, res.Payments[0].Paid)
+		assert.Equal(t, "card", res.Payments[0].Type)
+		assert.Equal(t, "xxxxx", res.Payments[0].AcquirerResponse)
+	})
+
+	t.Run("ReturnsErrorForHttpFailure", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"error":"invalid_request"}`))
+		}))
+		defer server.Close()
+
+		api := tapsilat.NewCustomAPI(server.URL, "token_op")
+		_, err := api.GetOrderPayments(context.Background(), tapsilat.GetOrderPaymentsRequest{})
+		require.Error(t, err)
+
+		var apiErr *tapsilat.APIError
+		require.ErrorAs(t, err, &apiErr)
+		assert.Equal(t, http.StatusBadRequest, apiErr.StatusCode)
+	})
+}

@@ -601,6 +601,7 @@ All API methods now require a `context.Context` as the first parameter for bette
 - `RefundOrder(ctx context.Context, refund RefundOrder) (RefundCancelOrderResponse, error)`
 - `RefundAllOrder(ctx context.Context, referenceID string) (RefundCancelOrderResponse, error)`
 - `CancelOrder(ctx context.Context, cancel CancelOrder) (RefundCancelOrderResponse, error)`
+- `GetOrderPayments(ctx context.Context, payload GetOrderPaymentsRequest) (GetOrderPaymentsResponse, error)`
 
 ### Payment Terms Operations
 
