@@ -1148,3 +1148,39 @@ type OrderPayment struct {
 type GetOrderPaymentsResponse struct {
 	Payments []OrderPayment `json:"payments,omitempty"`
 }
+
+// OrgCreateUserRequest represents the request to create an organization user.
+type OrgCreateUserRequest struct {
+	Email          string `json:"email,omitempty"`
+	IdentityNumber string `json:"identity_number,omitempty"`
+	Phone          string `json:"phone,omitempty"`
+	FirstName      string `json:"first_name,omitempty"`
+	LastName       string `json:"last_name,omitempty"`
+	ReferenceID    string `json:"reference_id,omitempty"`
+	ConversationID string `json:"conversation_id,omitempty"`
+	IsMailVerified bool   `json:"is_mail_verified,omitempty"`
+}
+
+// OrgCreateUserResponse represents the response from creating an organization user.
+type OrgCreateUserResponse struct {
+	Code    uint64 `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+	UserID  string `json:"user_id,omitempty"`
+}
+
+// OrgUserTokenCreateRequest represents the request to create a token for an
+// organization user. Expire is given in minutes.
+type OrgUserTokenCreateRequest struct {
+	Email               string `json:"email,omitempty"`
+	Expire              uint32 `json:"expire,omitempty"`
+	InvalidateOldTokens bool   `json:"invalidate_old_tokens,omitempty"`
+}
+
+// OrgUserTokenCreateResponse represents the response from creating an
+// organization user token.
+type OrgUserTokenCreateResponse struct {
+	Code    uint64 `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+	Token   string `json:"token,omitempty"`
+	UserID  string `json:"user_id,omitempty"`
+}

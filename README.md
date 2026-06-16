@@ -628,6 +628,8 @@ All API methods now require a `context.Context` as the first parameter for bette
 - `OrderRelatedUpdate(ctx context.Context, referenceID, relatedReferenceID string) (map[string]any, error)`
 - `GetOrganizationCurrencies(ctx context.Context) (OrganizationCurrenciesResponse, error)`
 - `GetOrganizationSettings(ctx context.Context) (OrganizationSettings, error)`
+- `CreateOrganizationUser(ctx context.Context, payload OrgCreateUserRequest) (OrgCreateUserResponse, error)`
+- `CreateOrganizationUserToken(ctx context.Context, payload OrgUserTokenCreateRequest) (OrgUserTokenCreateResponse, error)`
 
 ### Management Operations
 

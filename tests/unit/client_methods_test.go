@@ -1090,3 +1090,103 @@ func TestGetOrderPayments(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, apiErr.StatusCode)
 	})
 }
+
+func TestCreateOrganizationUser(t *testing.T) {
+	t.Run("SendsExpectedRequestAndParsesResponse", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPost, r.Method)
+			assert.Equal(t, "/organization/user/create", r.URL.Path)
+			assert.Equal(t, "Bearer token_org_user", r.Header.Get("Authorization"))
+			assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+
+			body, err := io.ReadAll(r.Body)
+			require.NoError(t, err)
+			assert.JSONEq(t, `{"email":"jane@example.com","identity_number":"11111111111","phone":"5551112233","first_name":"Jane","last_name":"Doe","reference_id":"ref_1","conversation_id":"conv_1","is_mail_verified":true}`, string(body))
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"code":200,"message":"created","user_id":"usr_1"}`))
+		}))
+		defer server.Close()
+
+		api := tapsilat.NewCustomAPI(server.URL, "token_org_user")
+		res, err := api.CreateOrganizationUser(context.Background(), tapsilat.OrgCreateUserRequest{
+			Email:          "jane@example.com",
+			IdentityNumber: "11111111111",
+			Phone:          "5551112233",
+			FirstName:      "Jane",
+			LastName:       "Doe",
+			ReferenceID:    "ref_1",
+			ConversationID: "conv_1",
+			IsMailVerified: true,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, uint64(200), res.Code)
+		assert.Equal(t, "created", res.Message)
+		assert.Equal(t, "usr_1", res.UserID)
+	})
+
+	t.Run("ReturnsErrorForHttpFailure", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"error":"invalid_request"}`))
+		}))
+		defer server.Close()
+
+		api := tapsilat.NewCustomAPI(server.URL, "token_org_user")
+		_, err := api.CreateOrganizationUser(context.Background(), tapsilat.OrgCreateUserRequest{})
+		require.Error(t, err)
+
+		var apiErr *tapsilat.APIError
+		require.ErrorAs(t, err, &apiErr)
+		assert.Equal(t, http.StatusBadRequest, apiErr.StatusCode)
+	})
+}
+
+func TestCreateOrganizationUserToken(t *testing.T) {
+	t.Run("SendsExpectedRequestAndParsesResponse", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPost, r.Method)
+			assert.Equal(t, "/organization/user/token", r.URL.Path)
+			assert.Equal(t, "Bearer token_org_user", r.Header.Get("Authorization"))
+			assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+
+			body, err := io.ReadAll(r.Body)
+			require.NoError(t, err)
+			assert.JSONEq(t, `{"email":"jane@example.com","expire":60,"invalidate_old_tokens":true}`, string(body))
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"code":200,"message":"created","token":"tok_abc","user_id":"usr_1"}`))
+		}))
+		defer server.Close()
+
+		api := tapsilat.NewCustomAPI(server.URL, "token_org_user")
+		res, err := api.CreateOrganizationUserToken(context.Background(), tapsilat.OrgUserTokenCreateRequest{
+			Email:               "jane@example.com",
+			Expire:              60,
+			InvalidateOldTokens: true,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, uint64(200), res.Code)
+		assert.Equal(t, "created", res.Message)
+		assert.Equal(t, "tok_abc", res.Token)
+		assert.Equal(t, "usr_1", res.UserID)
+	})
+
+	t.Run("ReturnsErrorForHttpFailure", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"error":"invalid_request"}`))
+		}))
+		defer server.Close()
+
+		api := tapsilat.NewCustomAPI(server.URL, "token_org_user")
+		_, err := api.CreateOrganizationUserToken(context.Background(), tapsilat.OrgUserTokenCreateRequest{})
+		require.Error(t, err)
+
+		var apiErr *tapsilat.APIError
+		require.ErrorAs(t, err, &apiErr)
+		assert.Equal(t, http.StatusBadRequest, apiErr.StatusCode)
+	})
+}

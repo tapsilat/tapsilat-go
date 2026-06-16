@@ -348,6 +348,21 @@ func (t *API) CreateOrganizationCurrency(ctx context.Context, currencyCode strin
 	return response, err
 }
 
+// CreateOrganizationUser creates a new user under the authenticated organization.
+func (t *API) CreateOrganizationUser(ctx context.Context, payload OrgCreateUserRequest) (OrgCreateUserResponse, error) {
+	var response OrgCreateUserResponse
+	err := t.post(ctx, "/organization/user/create", payload, &response)
+	return response, err
+}
+
+// CreateOrganizationUserToken creates an access token for an organization user.
+// The token expiry (payload.Expire) is given in minutes.
+func (t *API) CreateOrganizationUserToken(ctx context.Context, payload OrgUserTokenCreateRequest) (OrgUserTokenCreateResponse, error) {
+	var response OrgUserTokenCreateResponse
+	err := t.post(ctx, "/organization/user/token", payload, &response)
+	return response, err
+}
+
 func (t *API) CreateSubmerchant(ctx context.Context, payload SubmerchantCreateRequest) (SubmerchantMutationResponse, error) {
 	var response SubmerchantMutationResponse
 	currencyID, err := t.normalizeCurrencyID(ctx, payload.CurrencyID)
