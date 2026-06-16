@@ -891,7 +891,9 @@ func TestTokenizeCard(t *testing.T) {
 				"default":true,
 				"mode":1,
 				"user_id":"user_1",
-				"user_email":"john@example.com"
+				"user_email":"john@example.com",
+				"redirect_success_url":"https://example.com/success",
+				"redirect_failure_url":"https://example.com/failure"
 			}`, string(body))
 
 			w.Header().Set("Content-Type", "application/json")
@@ -910,16 +912,18 @@ func TestTokenizeCard(t *testing.T) {
 
 		api := tapsilat.NewCustomAPI(server.URL, "token_tok")
 		res, err := api.TokenizeCard(context.Background(), tapsilat.CardTokenizeRequest{
-			CardNumber:  "5526080000000006",
-			HolderName:  "John Doe",
-			ExpiryMonth: "12",
-			ExpiryYear:  "2030",
-			CVV:         "123",
-			Name:        "My Test Card",
-			Default:     true,
-			Mode:        1,
-			UserId:      "user_1",
-			UserEmail:   "john@example.com",
+			CardNumber:         "5526080000000006",
+			HolderName:         "John Doe",
+			ExpiryMonth:        "12",
+			ExpiryYear:         "2030",
+			CVV:                "123",
+			Name:               "My Test Card",
+			Default:            true,
+			Mode:               1,
+			UserId:             "user_1",
+			UserEmail:          "john@example.com",
+			RedirectSuccessUrl: "https://example.com/success",
+			RedirectFailureUrl: "https://example.com/failure",
 		})
 		require.NoError(t, err)
 		assert.True(t, res.IsSuccess)

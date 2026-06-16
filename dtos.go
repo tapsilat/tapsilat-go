@@ -1076,16 +1076,18 @@ type SubscriptionRedirectResponse struct {
 
 // CardTokenizeRequest represents the request to tokenize a card
 type CardTokenizeRequest struct {
-	CardNumber  string `json:"card_number"`
-	HolderName  string `json:"holder_name"`
-	ExpiryMonth string `json:"expiry_month"`
-	ExpiryYear  string `json:"expiry_year"`
-	CVV         string `json:"cvv"`
-	Name        string `json:"name,omitempty"`
-	Default     bool   `json:"default,omitempty"`
-	Mode        int    `json:"mode,omitempty"`
-	UserId      string `json:"user_id,omitempty"`
-	UserEmail   string `json:"user_email,omitempty"`
+	CardNumber         string `json:"card_number"`
+	HolderName         string `json:"holder_name"`
+	ExpiryMonth        string `json:"expiry_month"`
+	ExpiryYear         string `json:"expiry_year"`
+	CVV                string `json:"cvv"`
+	Name               string `json:"name,omitempty"`
+	Default            bool   `json:"default,omitempty"`
+	Mode               int    `json:"mode,omitempty"`
+	UserId             string `json:"user_id,omitempty"`
+	UserEmail          string `json:"user_email,omitempty"`
+	RedirectSuccessUrl string `json:"redirect_success_url,omitempty"`
+	RedirectFailureUrl string `json:"redirect_failure_url,omitempty"`
 }
 
 // CardTokenizeResponse represents the response from tokenizing a card
