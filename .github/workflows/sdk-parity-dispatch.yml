@@ -1,0 +1,17 @@
+name: SDK Parity Dispatch
+
+on:
+  push:
+    paths:
+      - "*.go"
+      - "go.mod"
+  pull_request:
+    paths:
+      - "*.go"
+      - "go.mod"
+  workflow_dispatch:
+
+jobs:
+  parity-dispatch:
+    uses: tapsilat/tapsilat-sdk-parity/.github/workflows/reusable-sdk-parity-dispatch.yml@main
+    secrets: inherit
