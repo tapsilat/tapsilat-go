@@ -1102,12 +1102,14 @@ type CardTokenizeResponse struct {
 
 // SavedCard represents a tokenized card stored on the account
 type SavedCard struct {
-	ID         string `json:"id,omitempty"`
-	Name       string `json:"name,omitempty"`
-	HolderName string `json:"holder_name,omitempty"`
-	CardNumber string `json:"card_number,omitempty"`
-	CardBrand  string `json:"card_brand,omitempty"`
-	Default    bool   `json:"default,omitempty"`
+	ID           string `json:"id,omitempty"`
+	Name         string `json:"name,omitempty"`
+	HolderName   string `json:"holder_name,omitempty"`
+	MaskedNumber string `json:"masked_number,omitempty"`
+	LastFour     string `json:"last_four,omitempty"`
+	Brand        string `json:"brand,omitempty"`
+	Bin          string `json:"bin,omitempty"`
+	IsDefault    bool   `json:"is_default,omitempty"`
 }
 
 // ListSavedCardsResponse represents a paginated list of saved cards

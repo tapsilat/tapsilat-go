@@ -961,7 +961,7 @@ func TestListSavedCards(t *testing.T) {
 				"per_page":5,
 				"total":1,
 				"total_pages":1,
-				"rows":[{"id":"card_1","name":"My Test Card","default":true}]
+				"rows":[{"id":"card_1","name":"My Test Card","is_default":true}]
 			}`))
 		}))
 		defer server.Close()
@@ -974,7 +974,7 @@ func TestListSavedCards(t *testing.T) {
 		assert.Equal(t, int64(1), res.Total)
 		require.Len(t, res.Rows, 1)
 		assert.Equal(t, "card_1", res.Rows[0].ID)
-		assert.True(t, res.Rows[0].Default)
+		assert.True(t, res.Rows[0].IsDefault)
 	})
 
 	t.Run("ReturnsErrorForHttpFailure", func(t *testing.T) {
