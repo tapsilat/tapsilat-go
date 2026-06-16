@@ -1084,6 +1084,8 @@ type CardTokenizeRequest struct {
 	Name        string `json:"name,omitempty"`
 	Default     bool   `json:"default,omitempty"`
 	Mode        int    `json:"mode,omitempty"`
+	UserId      string `json:"user_id,omitempty"`
+	UserEmail   string `json:"user_email,omitempty"`
 }
 
 // CardTokenizeResponse represents the response from tokenizing a card

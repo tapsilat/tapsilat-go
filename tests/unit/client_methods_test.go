@@ -889,7 +889,9 @@ func TestTokenizeCard(t *testing.T) {
 				"cvv":"123",
 				"name":"My Test Card",
 				"default":true,
-				"mode":1
+				"mode":1,
+				"user_id":"user_1",
+				"user_email":"john@example.com"
 			}`, string(body))
 
 			w.Header().Set("Content-Type", "application/json")
@@ -916,6 +918,8 @@ func TestTokenizeCard(t *testing.T) {
 			Name:        "My Test Card",
 			Default:     true,
 			Mode:        1,
+			UserId:      "user_1",
+			UserEmail:   "john@example.com",
 		})
 		require.NoError(t, err)
 		assert.True(t, res.IsSuccess)
