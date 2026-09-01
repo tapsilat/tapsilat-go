@@ -250,14 +250,14 @@ func (t *API) GetOrderPayments(ctx context.Context, payload GetOrderPaymentsRequ
 	return response, err
 }
 
-// ApproveSubmerchantPayment approves settlement of an Iyzico marketplace item payment.
+// ApproveSubmerchantPayment approves settlement of a marketplace item payment.
 func (t *API) ApproveSubmerchantPayment(ctx context.Context, payload SubmerchantPaymentAction) (SubmerchantPaymentActionResponse, error) {
 	var response SubmerchantPaymentActionResponse
 	err := t.post(ctx, "/submerchants/payment/approve", payload, &response)
 	return response, err
 }
 
-// DisapproveSubmerchantPayment rejects settlement of an Iyzico marketplace item payment.
+// DisapproveSubmerchantPayment rejects settlement of a marketplace item payment.
 func (t *API) DisapproveSubmerchantPayment(ctx context.Context, payload SubmerchantPaymentAction) (SubmerchantPaymentActionResponse, error) {
 	var response SubmerchantPaymentActionResponse
 	err := t.post(ctx, "/submerchants/payment/disapprove", payload, &response)

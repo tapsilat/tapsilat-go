@@ -1129,10 +1129,10 @@ func TestSubmerchantPaymentActions(t *testing.T) {
 
 				body, err := io.ReadAll(r.Body)
 				require.NoError(t, err)
-				assert.JSONEq(t, `{"locale":"tr","conversation_id":"conv_1","payment_transaction_id":"transaction_1","acquirer":"iyzico"}`, string(body))
+				assert.JSONEq(t, `{"locale":"tr","conversation_id":"conv_1","payment_transaction_id":"transaction_1","acquirer":"acquirer_a"}`, string(body))
 
 				w.Header().Set("Content-Type", "application/json")
-				_, _ = w.Write([]byte(`{"status":"success","payment_transaction_id":"transaction_1","acquirer":"iyzico"}`))
+				_, _ = w.Write([]byte(`{"status":"success","payment_transaction_id":"transaction_1","acquirer":"acquirer_a"}`))
 			}))
 			defer server.Close()
 
@@ -1141,7 +1141,7 @@ func TestSubmerchantPaymentActions(t *testing.T) {
 				Locale:               "tr",
 				ConversationID:       "conv_1",
 				PaymentTransactionID: "transaction_1",
-				Acquirer:             "iyzico",
+				Acquirer:             "acquirer_a",
 			})
 			require.NoError(t, err)
 			assert.Equal(t, "success", response.Status)
@@ -1173,7 +1173,7 @@ func TestUpdateSubmerchantPaymentItem(t *testing.T) {
 		assert.Equal(t, "Bearer token_marketplace", r.Header.Get("Authorization"))
 		body, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
-		assert.JSONEq(t, `{"locale":"tr","conversation_id":"conv_1","payment_transaction_id":"transaction_1","sub_merchant_key":"key_2","sub_merchant_price":"85.50","acquirer":"iyzico"}`, string(body))
+		assert.JSONEq(t, `{"locale":"tr","conversation_id":"conv_1","payment_transaction_id":"transaction_1","sub_merchant_key":"key_2","sub_merchant_price":"85.50","acquirer":"acquirer_a"}`, string(body))
 		_, _ = w.Write([]byte(`{"status":"success","payment_transaction_id":"transaction_1"}`))
 	}))
 	defer server.Close()
@@ -1181,7 +1181,7 @@ func TestUpdateSubmerchantPaymentItem(t *testing.T) {
 	api := tapsilat.NewCustomAPI(server.URL, "token_marketplace")
 	response, err := api.UpdateSubmerchantPaymentItem(context.Background(), tapsilat.SubmerchantPaymentItemUpdate{
 		Locale: "tr", ConversationID: "conv_1", PaymentTransactionID: "transaction_1",
-		SubMerchantKey: "key_2", SubMerchantPrice: "85.50", Acquirer: "iyzico",
+		SubMerchantKey: "key_2", SubMerchantPrice: "85.50", Acquirer: "acquirer_a",
 	})
 	require.NoError(t, err)
 	assert.Equal(t, "success", response.Status)
