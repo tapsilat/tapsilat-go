@@ -1099,6 +1099,95 @@ func TestGetOrderPayments(t *testing.T) {
 	})
 }
 
+func TestSubmerchantPaymentActions(t *testing.T) {
+	for _, testCase := range []struct {
+		name   string
+		path   string
+		action func(*tapsilat.API, context.Context, tapsilat.SubmerchantPaymentAction) (tapsilat.SubmerchantPaymentActionResponse, error)
+	}{
+		{
+			name: "Approve",
+			path: "/submerchants/payment/approve",
+			action: func(api *tapsilat.API, ctx context.Context, payload tapsilat.SubmerchantPaymentAction) (tapsilat.SubmerchantPaymentActionResponse, error) {
+				return api.ApproveSubmerchantPayment(ctx, payload)
+			},
+		},
+		{
+			name: "Disapprove",
+			path: "/submerchants/payment/disapprove",
+			action: func(api *tapsilat.API, ctx context.Context, payload tapsilat.SubmerchantPaymentAction) (tapsilat.SubmerchantPaymentActionResponse, error) {
+				return api.DisapproveSubmerchantPayment(ctx, payload)
+			},
+		},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, http.MethodPost, r.Method)
+				assert.Equal(t, testCase.path, r.URL.Path)
+				assert.Equal(t, "Bearer token_marketplace", r.Header.Get("Authorization"))
+				assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+
+				body, err := io.ReadAll(r.Body)
+				require.NoError(t, err)
+				assert.JSONEq(t, `{"locale":"tr","conversation_id":"conv_1","payment_transaction_id":"transaction_1","acquirer":"iyzico"}`, string(body))
+
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(`{"status":"success","payment_transaction_id":"transaction_1","acquirer":"iyzico"}`))
+			}))
+			defer server.Close()
+
+			api := tapsilat.NewCustomAPI(server.URL, "token_marketplace")
+			response, err := testCase.action(api, context.Background(), tapsilat.SubmerchantPaymentAction{
+				Locale:               "tr",
+				ConversationID:       "conv_1",
+				PaymentTransactionID: "transaction_1",
+				Acquirer:             "iyzico",
+			})
+			require.NoError(t, err)
+			assert.Equal(t, "success", response.Status)
+			assert.Equal(t, "transaction_1", response.PaymentTransactionID)
+		})
+	}
+
+	t.Run("NormalizesAPIErrors", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"error":"invalid_request"}`))
+		}))
+		defer server.Close()
+
+		api := tapsilat.NewCustomAPI(server.URL, "token_marketplace")
+		_, err := api.ApproveSubmerchantPayment(context.Background(), tapsilat.SubmerchantPaymentAction{})
+		require.Error(t, err)
+
+		var apiErr *tapsilat.APIError
+		require.ErrorAs(t, err, &apiErr)
+		assert.Equal(t, http.StatusBadRequest, apiErr.StatusCode)
+	})
+}
+
+func TestUpdateSubmerchantPaymentItem(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPut, r.Method)
+		assert.Equal(t, "/submerchants/payment/item", r.URL.Path)
+		assert.Equal(t, "Bearer token_marketplace", r.Header.Get("Authorization"))
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		assert.JSONEq(t, `{"locale":"tr","conversation_id":"conv_1","payment_transaction_id":"transaction_1","sub_merchant_key":"key_2","sub_merchant_price":"85.50","acquirer":"iyzico"}`, string(body))
+		_, _ = w.Write([]byte(`{"status":"success","payment_transaction_id":"transaction_1"}`))
+	}))
+	defer server.Close()
+
+	api := tapsilat.NewCustomAPI(server.URL, "token_marketplace")
+	response, err := api.UpdateSubmerchantPaymentItem(context.Background(), tapsilat.SubmerchantPaymentItemUpdate{
+		Locale: "tr", ConversationID: "conv_1", PaymentTransactionID: "transaction_1",
+		SubMerchantKey: "key_2", SubMerchantPrice: "85.50", Acquirer: "iyzico",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "success", response.Status)
+	assert.Equal(t, "transaction_1", response.PaymentTransactionID)
+}
+
 func TestCreateOrganizationUser(t *testing.T) {
 	t.Run("SendsExpectedRequestAndParsesResponse", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

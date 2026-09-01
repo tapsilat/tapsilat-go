@@ -1155,6 +1155,42 @@ type GetOrderPaymentsResponse struct {
 	Payments []OrderPayment `json:"payments,omitempty"`
 }
 
+// SubmerchantPaymentAction requests settlement approval or disapproval for an item payment.
+type SubmerchantPaymentAction struct {
+	Locale               string `json:"locale"`
+	ConversationID       string `json:"conversation_id"`
+	PaymentTransactionID string `json:"payment_transaction_id"`
+	Acquirer             string `json:"acquirer"`
+}
+
+// SubmerchantPaymentActionResponse is the settlement action result returned by the payment provider.
+type SubmerchantPaymentActionResponse struct {
+	Status               string `json:"status,omitempty"`
+	Locale               string `json:"locale,omitempty"`
+	SystemTime           int64  `json:"system_time,omitempty"`
+	ConversationID       string `json:"conversation_id,omitempty"`
+	PaymentTransactionID string `json:"payment_transaction_id,omitempty"`
+	Acquirer             string `json:"acquirer,omitempty"`
+}
+
+// SubmerchantPaymentItemUpdate changes the seller or payout for a completed marketplace item.
+type SubmerchantPaymentItemUpdate struct {
+	Locale               string `json:"locale"`
+	ConversationID       string `json:"conversation_id"`
+	PaymentTransactionID string `json:"payment_transaction_id"`
+	SubMerchantKey       string `json:"sub_merchant_key"`
+	SubMerchantPrice     string `json:"sub_merchant_price"`
+	Acquirer             string `json:"acquirer"`
+}
+
+type SubmerchantPaymentItemUpdateResponse struct {
+	Status               string `json:"status,omitempty"`
+	Locale               string `json:"locale,omitempty"`
+	SystemTime           int64  `json:"system_time,omitempty"`
+	ConversationID       string `json:"conversation_id,omitempty"`
+	PaymentTransactionID string `json:"payment_transaction_id,omitempty"`
+}
+
 // OrgCreateUserRequest represents the request to create an organization user.
 type OrgCreateUserRequest struct {
 	Email          string `json:"email,omitempty"`

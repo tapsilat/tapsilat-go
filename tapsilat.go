@@ -77,6 +77,20 @@ func (t *API) patch(ctx context.Context, path string, payload any, response any)
 	return t.do(req, response)
 }
 
+func (t *API) put(ctx context.Context, path string, payload any, response any) error {
+	url := t.EndPoint + path
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewBuffer(jsonPayload))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	return t.do(req, response)
+}
+
 func (t *API) get(ctx context.Context, path string, response any) error {
 	url := t.EndPoint + path
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -233,6 +247,27 @@ func (t *API) GetOrderTransactions(ctx context.Context, referenceID string) (map
 func (t *API) GetOrderPayments(ctx context.Context, payload GetOrderPaymentsRequest) (GetOrderPaymentsResponse, error) {
 	var response GetOrderPaymentsResponse
 	err := t.post(ctx, "/order/payments", payload, &response)
+	return response, err
+}
+
+// ApproveSubmerchantPayment approves settlement of an Iyzico marketplace item payment.
+func (t *API) ApproveSubmerchantPayment(ctx context.Context, payload SubmerchantPaymentAction) (SubmerchantPaymentActionResponse, error) {
+	var response SubmerchantPaymentActionResponse
+	err := t.post(ctx, "/submerchants/payment/approve", payload, &response)
+	return response, err
+}
+
+// DisapproveSubmerchantPayment rejects settlement of an Iyzico marketplace item payment.
+func (t *API) DisapproveSubmerchantPayment(ctx context.Context, payload SubmerchantPaymentAction) (SubmerchantPaymentActionResponse, error) {
+	var response SubmerchantPaymentActionResponse
+	err := t.post(ctx, "/submerchants/payment/disapprove", payload, &response)
+	return response, err
+}
+
+// UpdateSubmerchantPaymentItem changes the seller or payout for a completed marketplace item.
+func (t *API) UpdateSubmerchantPaymentItem(ctx context.Context, payload SubmerchantPaymentItemUpdate) (SubmerchantPaymentItemUpdateResponse, error) {
+	var response SubmerchantPaymentItemUpdateResponse
+	err := t.put(ctx, "/submerchants/payment/item", payload, &response)
 	return response, err
 }
 
