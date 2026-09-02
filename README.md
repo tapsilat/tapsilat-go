@@ -406,6 +406,15 @@ func main() {
 
 #### Create Subscription
 
+Use `Interval` with one of `day`, `week`, `month`, or `year`, together with a
+positive `IntervalCount`, to define the recurring cadence. `Cycle: 0` renews the
+subscription until it is canceled; a positive value limits the total number of
+settled billing cycles.
+
+Set `CardID` to an existing scoped saved card. For supported hosted mandate
+setups, leave `CardID` empty and it will be omitted from the request. Applications
+do not need to collect or send raw card data through this SDK.
+
 ```go
 package main
 
@@ -422,9 +431,9 @@ func main() {
 		Amount:              100.0,
 		Currency:            "TRY",
 		Title:               "Monthly Subscription",
-		Period:              30,
-		Cycle:               1,
-		PaymentDate:         1,
+		Interval:            "month",
+		IntervalCount:       1,
+		Cycle:               0,
 		ExternalReferenceID: "ext_sub_123",
 		SuccessURL:          "https://example.com/success",
 		FailureURL:          "https://example.com/failure",
