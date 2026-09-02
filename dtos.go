@@ -1012,11 +1012,17 @@ type SubscriptionCreateRequest struct {
 	Cycle               int                 `json:"cycle,omitempty"`
 	ExternalReferenceID string              `json:"external_reference_id,omitempty"`
 	FailureURL          string              `json:"failure_url,omitempty"`
-	PaymentDate         int                 `json:"payment_date,omitempty"`
-	Period              int                 `json:"period,omitempty"`
-	SuccessURL          string              `json:"success_url,omitempty"`
-	Title               string              `json:"title,omitempty"`
-	User                SubscriptionUser    `json:"user"`
+	Interval            string              `json:"interval,omitempty"`
+	IntervalCount       int                 `json:"interval_count,omitempty"`
+	// Deprecated: PaymentDate is ignored by the current server. The subscription
+	// start date determines the billing anchor.
+	PaymentDate int `json:"payment_date,omitempty"`
+	// Deprecated: Period is the legacy day-count cadence. Use Interval and
+	// IntervalCount for new subscriptions.
+	Period     int              `json:"period,omitempty"`
+	SuccessURL string           `json:"success_url,omitempty"`
+	Title      string           `json:"title,omitempty"`
+	User       SubscriptionUser `json:"user"`
 }
 
 // SubscriptionRedirectRequest represents the request payload for redirecting a subscription
@@ -1037,9 +1043,13 @@ type SubscriptionOrder struct {
 // SubscriptionDetail represents the detailed subscription information
 type SubscriptionDetail struct {
 	Amount              string              `json:"amount,omitempty"`
+	Cycle               int                 `json:"cycle,omitempty"`
+	CyclesCompleted     int                 `json:"cycles_completed,omitempty"`
 	Currency            string              `json:"currency,omitempty"`
 	DueDate             string              `json:"due_date,omitempty"`
 	ExternalReferenceID string              `json:"external_reference_id,omitempty"`
+	Interval            string              `json:"interval,omitempty"`
+	IntervalCount       int                 `json:"interval_count,omitempty"`
 	IsActive            bool                `json:"is_active,omitempty"`
 	Orders              []SubscriptionOrder `json:"orders,omitempty"`
 	PaymentDate         int                 `json:"payment_date,omitempty"`
@@ -1059,9 +1069,14 @@ type SubscriptionCreateResponse struct {
 // SubscriptionListItem represents a single subscription item in the list
 type SubscriptionListItem struct {
 	Amount              string `json:"amount,omitempty"`
+	Cycle               int    `json:"cycle,omitempty"`
+	CyclesCompleted     int    `json:"cycles_completed,omitempty"`
 	Currency            string `json:"currency,omitempty"`
 	ExternalReferenceID string `json:"external_reference_id,omitempty"`
+	Interval            string `json:"interval,omitempty"`
+	IntervalCount       int    `json:"interval_count,omitempty"`
 	IsActive            bool   `json:"is_active,omitempty"`
+	NextPaymentDate     string `json:"next_payment_date,omitempty"`
 	PaymentDate         int    `json:"payment_date,omitempty"`
 	PaymentStatus       string `json:"payment_status,omitempty"`
 	Period              int    `json:"period,omitempty"`
