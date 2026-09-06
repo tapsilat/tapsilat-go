@@ -304,7 +304,7 @@ func TestCreateMarketplaceSubmerchant(t *testing.T) {
 			"currency_id":"9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa","sub_merchant_external_id":"seller_ext",
 			"identity_number":"","sub_merchant_type":"PRIVATE_COMPANY","tax_number":"1234567890","status":"active",
 			"system_time":1710000000,"contact_name":"Jane","contact_surname":"Doe","vpos_id":"8f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa",
-			"approval_mode":"auto","release_policy_id":"7f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa"
+			"approval_mode":"auto","release_policy_id":"7f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa","idempotency_key":"seller-create-1"
 		}`, string(body))
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
@@ -321,7 +321,7 @@ func TestCreateMarketplaceSubmerchant(t *testing.T) {
 		CurrencyID: "9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa", SubmerchantExternalID: "seller_ext",
 		SubmerchantType: "PRIVATE_COMPANY", TaxNumber: "1234567890", Status: "active", SystemTime: 1710000000,
 		ContactName: "Jane", ContactSurname: "Doe", VposID: "8f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa", ApprovalMode: &approvalMode,
-		ReleasePolicyID: &releasePolicyID,
+		ReleasePolicyID: &releasePolicyID, IdempotencyKey: "seller-create-1",
 	})
 	require.NoError(t, err)
 	assert.Equal(t, "sub_1", response.ID)

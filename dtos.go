@@ -438,6 +438,7 @@ type MarketplaceSubmerchantCreateRequest struct {
 	VposID                string   `json:"vpos_id"`
 	ApprovalMode          *string  `json:"approval_mode,omitempty"`
 	ReleasePolicyID       *string  `json:"release_policy_id,omitempty"`
+	IdempotencyKey        string   `json:"idempotency_key,omitempty"`
 }
 
 type MarketplaceSubmerchantCreateResponse struct {
