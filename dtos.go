@@ -430,7 +430,6 @@ type MarketplaceSubmerchantCreateRequest struct {
 	IdentityNumber        string   `json:"identity_number"`
 	SubmerchantType       string   `json:"sub_merchant_type"`
 	TaxNumber             string   `json:"tax_number"`
-	SubmerchantKey        string   `json:"sub_merchant_key,omitempty"`
 	Labels                []string `json:"labels,omitempty"`
 	Status                string   `json:"status"`
 	SystemTime            int64    `json:"system_time"`
@@ -445,8 +444,7 @@ type MarketplaceSubmerchantCreateResponse struct {
 	ID                string `json:"id"`
 	SuborganizationID string `json:"suborganization_id"`
 	VposSubmerchantID string `json:"vpos_submerchant_id"`
-	SubmerchantKey    string `json:"sub_merchant_key"`
-	Acquirer          string `json:"acquirer"`
+	RoutingReference  string `json:"routing_reference"`
 }
 
 type SubmerchantPayoutEventRequest struct {

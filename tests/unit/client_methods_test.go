@@ -308,7 +308,7 @@ func TestCreateMarketplaceSubmerchant(t *testing.T) {
 		}`, string(body))
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		_, _ = w.Write([]byte(`{"id":"sub_1","suborganization_id":"org_1","vpos_submerchant_id":"map_1","sub_merchant_key":"seller_1","acquirer":"paytr"}`))
+		_, _ = w.Write([]byte(`{"id":"sub_1","suborganization_id":"org_1","vpos_submerchant_id":"map_1","routing_reference":"route_1"}`))
 	}))
 	defer server.Close()
 
@@ -326,7 +326,7 @@ func TestCreateMarketplaceSubmerchant(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "sub_1", response.ID)
 	assert.Equal(t, "map_1", response.VposSubmerchantID)
-	assert.Equal(t, "paytr", response.Acquirer)
+	assert.Equal(t, "route_1", response.RoutingReference)
 }
 
 func TestRecordSubmerchantPayoutEvent(t *testing.T) {

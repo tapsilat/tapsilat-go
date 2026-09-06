@@ -252,7 +252,7 @@ seller, err := api.CreateMarketplaceSubmerchant(ctx, tapsilat.MarketplaceSubmerc
 })
 ```
 
-Use `seller.SubmerchantKey` as the basket item's `SubMerchantKey`. PayTR creates this routing key automatically. For an existing iyzico seller, pass its provider-issued key as `SubmerchantKey` during creation.
+Use `seller.RoutingReference` as the basket item's `SubMerchantKey`. Treat this value as an opaque marketplace routing reference; its format and lifecycle are managed by the selected VPOS integration.
 
 ### Order with Payment Terms (Installments)
 
