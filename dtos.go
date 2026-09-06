@@ -259,6 +259,7 @@ type OrderBasketItem struct {
 	CommissionAmount *float64              `json:"commission_amount,omitempty"`
 	SubMerchantKey   string                `json:"sub_merchant_key,omitempty"`
 	SubMerchantPrice string                `json:"sub_merchant_price,omitempty"`
+	PayoutReleaseAt  *time.Time            `json:"payout_release_at,omitempty"`
 	Payer            *OrderBasketItemPayer `json:"payer,omitempty"`
 }
 
@@ -412,6 +413,59 @@ type SubmerchantCreateRequest struct {
 	SystemTime            int64  `json:"system_time"`
 	ContactName           string `json:"contact_name"`
 	ContactSurname        string `json:"contact_surname"`
+}
+
+type MarketplaceSubmerchantCreateRequest struct {
+	Locale                string   `json:"locale"`
+	ConversationID        string   `json:"conversation_id"`
+	Name                  string   `json:"name"`
+	Email                 string   `json:"email"`
+	GsmNumber             string   `json:"gsm_number"`
+	Address               string   `json:"address"`
+	Iban                  string   `json:"iban"`
+	TaxOffice             string   `json:"tax_office"`
+	LegalCompanyTitle     string   `json:"legal_company_title"`
+	CurrencyID            string   `json:"currency_id"`
+	SubmerchantExternalID string   `json:"sub_merchant_external_id"`
+	IdentityNumber        string   `json:"identity_number"`
+	SubmerchantType       string   `json:"sub_merchant_type"`
+	TaxNumber             string   `json:"tax_number"`
+	SubmerchantKey        string   `json:"sub_merchant_key,omitempty"`
+	Labels                []string `json:"labels,omitempty"`
+	Status                string   `json:"status"`
+	SystemTime            int64    `json:"system_time"`
+	ContactName           string   `json:"contact_name"`
+	ContactSurname        string   `json:"contact_surname"`
+	VposID                string   `json:"vpos_id"`
+	ApprovalMode          *string  `json:"approval_mode,omitempty"`
+	ReleasePolicyID       *string  `json:"release_policy_id,omitempty"`
+}
+
+type MarketplaceSubmerchantCreateResponse struct {
+	ID                string `json:"id"`
+	SuborganizationID string `json:"suborganization_id"`
+	VposSubmerchantID string `json:"vpos_submerchant_id"`
+	SubmerchantKey    string `json:"sub_merchant_key"`
+	Acquirer          string `json:"acquirer"`
+}
+
+type SubmerchantPayoutEventRequest struct {
+	IdempotencyKey string         `json:"idempotency_key"`
+	OrderReference string         `json:"order_reference"`
+	ItemID         string         `json:"item_id"`
+	EventType      string         `json:"event_type"`
+	OccurredAt     *time.Time     `json:"occurred_at,omitempty"`
+	Payload        map[string]any `json:"payload,omitempty"`
+}
+
+type SubmerchantPayoutEventResponse struct {
+	ID             string         `json:"id"`
+	IdempotencyKey string         `json:"idempotency_key"`
+	OrderReference string         `json:"order_reference"`
+	ItemID         string         `json:"item_id"`
+	EventType      string         `json:"event_type"`
+	OccurredAt     time.Time      `json:"occurred_at"`
+	Payload        map[string]any `json:"payload,omitempty"`
 }
 
 type SubmerchantUpdateRequest struct {

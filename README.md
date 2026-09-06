@@ -218,6 +218,42 @@ order := tapsilat.Order{
 }
 ```
 
+### Marketplace Payout Release
+
+Set an optional release time on each order item and report a business event when the service is completed:
+
+```go
+releaseAt := time.Date(2026, time.December, 15, 10, 0, 0, 0, time.UTC)
+order.BasketItems[0].PayoutReleaseAt = &releaseAt
+
+event, err := api.RecordSubmerchantPayoutEvent(ctx, tapsilat.SubmerchantPayoutEventRequest{
+    IdempotencyKey: "booking-123-service-completed",
+    OrderReference: orderReference,
+    ItemID:          order.BasketItems[0].Id,
+    EventType:       "service_completed",
+    OccurredAt:      &releaseAt,
+    Payload:         map[string]any{"booking_id": "booking-123"},
+})
+```
+
+Create a marketplace seller and its VPOS mapping in one operation:
+
+```go
+seller, err := api.CreateMarketplaceSubmerchant(ctx, tapsilat.MarketplaceSubmerchantCreateRequest{
+    Locale:            "tr",
+    ConversationID:    "seller-create-123",
+    Name:              "Example Travel",
+    Email:             "finance@example.test",
+    GsmNumber:         "905551112233",
+    CurrencyID:        "TRY",
+    SubmerchantType:   "PRIVATE_COMPANY",
+    TaxNumber:         "1234567890",
+    VposID:            marketplaceVposID,
+})
+```
+
+Use `seller.SubmerchantKey` as the basket item's `SubMerchantKey`. PayTR creates this routing key automatically. For an existing iyzico seller, pass its provider-issued key as `SubmerchantKey` during creation.
+
 ### Order with Payment Terms (Installments)
 
 ```go
@@ -646,6 +682,8 @@ All API methods now require a `context.Context` as the first parameter for bette
 ### Management Operations
 
 - `CreateSubmerchant(ctx context.Context, payload SubmerchantCreateRequest) (SubmerchantMutationResponse, error)`
+- `CreateMarketplaceSubmerchant(ctx context.Context, payload MarketplaceSubmerchantCreateRequest) (MarketplaceSubmerchantCreateResponse, error)`
+- `RecordSubmerchantPayoutEvent(ctx context.Context, payload SubmerchantPayoutEventRequest) (SubmerchantPayoutEventResponse, error)`
 - `GetSubmerchant(ctx context.Context, id string) (Submerchant, error)`
 - `ListSubmerchants(ctx context.Context, page, perPage int) (SubmerchantListResponse, error)`
 - `UpdateSubmerchant(ctx context.Context, id string, payload SubmerchantUpdateRequest) (SubmerchantMutationResponse, error)`

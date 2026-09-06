@@ -48,18 +48,44 @@ func NewCustomAPI(endpoint, token string) *API {
 }
 
 func (t *API) post(ctx context.Context, path string, payload any, response any) error {
-	url := t.EndPoint + path
+	return t.postTo(ctx, t.EndPoint+path, payload, response)
+}
+
+func (t *API) postVersion(ctx context.Context, version, path string, payload any, response any) error {
+	endpoint, err := versionedEndpoint(t.EndPoint, version)
+	if err != nil {
+		return err
+	}
+	return t.postTo(ctx, endpoint+path, payload, response)
+}
+
+func (t *API) postTo(ctx context.Context, requestURL string, payload any, response any) error {
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonPayload))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, requestURL, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	return t.do(req, response)
+}
+
+func versionedEndpoint(endpoint, version string) (string, error) {
+	parsed, err := url.Parse(strings.TrimRight(endpoint, "/"))
+	if err != nil {
+		return "", err
+	}
+	segments := strings.Split(strings.Trim(parsed.Path, "/"), "/")
+	if len(segments) >= 2 && segments[len(segments)-2] == "api" && strings.HasPrefix(segments[len(segments)-1], "v") {
+		segments[len(segments)-1] = version
+		parsed.Path = "/" + strings.Join(segments, "/")
+	} else {
+		parsed.Path = strings.TrimRight(parsed.Path, "/") + "/api/" + version
+	}
+	return strings.TrimRight(parsed.String(), "/"), nil
 }
 
 func (t *API) patch(ctx context.Context, path string, payload any, response any) error {
@@ -406,6 +432,25 @@ func (t *API) CreateSubmerchant(ctx context.Context, payload SubmerchantCreateRe
 	}
 	payload.CurrencyID = currencyID
 	err = t.post(ctx, "/submerchants", payload, &response)
+	return response, err
+}
+
+// CreateMarketplaceSubmerchant creates a seller and its VPOS mapping atomically.
+func (t *API) CreateMarketplaceSubmerchant(ctx context.Context, payload MarketplaceSubmerchantCreateRequest) (MarketplaceSubmerchantCreateResponse, error) {
+	var response MarketplaceSubmerchantCreateResponse
+	currencyID, err := t.normalizeCurrencyID(ctx, payload.CurrencyID)
+	if err != nil {
+		return response, err
+	}
+	payload.CurrencyID = currencyID
+	err = t.postVersion(ctx, "v2", "/submerchants", payload, &response)
+	return response, err
+}
+
+// RecordSubmerchantPayoutEvent records a business event that can release an order item for payout.
+func (t *API) RecordSubmerchantPayoutEvent(ctx context.Context, payload SubmerchantPayoutEventRequest) (SubmerchantPayoutEventResponse, error) {
+	var response SubmerchantPayoutEventResponse
+	err := t.post(ctx, "/submerchant-payout-events", payload, &response)
 	return response, err
 }
 
