@@ -2,9 +2,11 @@ package unit_test
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -357,6 +359,37 @@ func TestRecordSubmerchantPayoutEvent(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "evt_1", response.ID)
 	assert.Equal(t, occurredAt, response.OccurredAt)
+}
+
+func TestMarketplaceProvisioningResponseCompatibility(t *testing.T) {
+	for _, states := range [][]string{nil, {"completed", "completed"}, {"completed", "failed"}, {"failed", "failed"}} {
+		t.Run(strings.Join(states, "/"), func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				body := map[string]any{"id": "seller", "routing_reference": "seller"}
+				if states != nil {
+					items := []map[string]any{}
+					for _, state := range states {
+						items = append(items, map[string]any{"vpos_id": "account", "provider": "provider", "status": state,
+							"retryable": state == "failed", "error_message": "result", "provider_submerchant_key": "key", "vpos_submerchant_id": "mapping"})
+					}
+					body["provisionings"] = items
+				}
+				w.WriteHeader(http.StatusCreated)
+				require.NoError(t, json.NewEncoder(w).Encode(body))
+			}))
+			defer server.Close()
+			api := tapsilat.NewCustomAPI(server.URL+"/api/v1", "test")
+			result, err := api.CreateMarketplaceSubmerchant(context.Background(), tapsilat.MarketplaceSubmerchantCreateRequest{CurrencyID: "9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa"})
+			require.NoError(t, err)
+			require.Len(t, result.Provisionings, len(states))
+			for i, item := range result.Provisionings {
+				assert.Equal(t, states[i], item.Status)
+				assert.Equal(t, states[i] == "failed", item.Retryable)
+				assert.Equal(t, "key", item.ProviderSubmerchantKey)
+				assert.Equal(t, "mapping", item.VposSubmerchantID)
+			}
+		})
+	}
 }
 
 func TestGetSubmerchant(t *testing.T) {

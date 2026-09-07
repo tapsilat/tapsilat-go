@@ -441,10 +441,21 @@ type MarketplaceSubmerchantCreateRequest struct {
 }
 
 type MarketplaceSubmerchantCreateResponse struct {
-	ID                string `json:"id"`
-	SuborganizationID string `json:"suborganization_id"`
-	VposSubmerchantID string `json:"vpos_submerchant_id"`
-	RoutingReference  string `json:"routing_reference"`
+	ID                string                               `json:"id"`
+	SuborganizationID string                               `json:"suborganization_id"`
+	VposSubmerchantID string                               `json:"vpos_submerchant_id"`
+	RoutingReference  string                               `json:"routing_reference"`
+	Provisionings     []MarketplaceSubmerchantProvisioning `json:"provisionings"`
+}
+
+type MarketplaceSubmerchantProvisioning struct {
+	VposID                 string `json:"vpos_id"`
+	VposSubmerchantID      string `json:"vpos_submerchant_id,omitempty"`
+	Provider               string `json:"provider"`
+	Status                 string `json:"status"`
+	ProviderSubmerchantKey string `json:"provider_submerchant_key,omitempty"`
+	Retryable              bool   `json:"retryable"`
+	ErrorMessage           string `json:"error_message,omitempty"`
 }
 
 type SubmerchantPayoutEventRequest struct {

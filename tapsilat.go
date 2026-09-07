@@ -435,7 +435,7 @@ func (t *API) CreateSubmerchant(ctx context.Context, payload SubmerchantCreateRe
 	return response, err
 }
 
-// CreateMarketplaceSubmerchant creates a seller and its VPOS mapping atomically.
+// CreateMarketplaceSubmerchant creates a logical seller; callers must inspect Provisionings for each VPOS account's readiness.
 func (t *API) CreateMarketplaceSubmerchant(ctx context.Context, payload MarketplaceSubmerchantCreateRequest) (MarketplaceSubmerchantCreateResponse, error) {
 	var response MarketplaceSubmerchantCreateResponse
 	currencyID, err := t.normalizeCurrencyID(ctx, payload.CurrencyID)

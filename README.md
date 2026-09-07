@@ -236,7 +236,7 @@ event, err := api.RecordSubmerchantPayoutEvent(ctx, tapsilat.SubmerchantPayoutEv
 })
 ```
 
-Create a marketplace seller and its VPOS mapping in one operation:
+Create a logical marketplace seller and provision its compatible VPOS accounts:
 
 ```go
 seller, err := api.CreateMarketplaceSubmerchant(ctx, tapsilat.MarketplaceSubmerchantCreateRequest{
@@ -252,7 +252,9 @@ seller, err := api.CreateMarketplaceSubmerchant(ctx, tapsilat.MarketplaceSubmerc
 })
 ```
 
-Use `seller.RoutingReference` as the basket item's `SubMerchantKey`. Treat this value as an opaque marketplace routing reference; its format and lifecycle are managed by the selected VPOS integration.
+Use `seller.RoutingReference` as the basket item's `SubMerchantKey`. This is an opaque, provider-neutral seller reference.
+
+After checking `err`, inspect `seller.Provisionings`: each entry identifies a VPOS account and reports `status`, `retryable`, and `error_message`. A successful API response confirms logical seller creation, not that every account is ready. Partial failures preserve completed mappings; recovery handles eligible unfinished operations. Only accounts with completed mappings can route this seller's payments. An absent or empty list from an older server does not confirm readiness. Reuse the same `IdempotencyKey` and request data when retrying creation.
 
 ### Order with Payment Terms (Installments)
 
