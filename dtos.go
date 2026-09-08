@@ -416,29 +416,39 @@ type SubmerchantCreateRequest struct {
 }
 
 type MarketplaceSubmerchantCreateRequest struct {
-	Locale                string   `json:"locale"`
-	ConversationID        string   `json:"conversation_id"`
-	Name                  string   `json:"name"`
-	Email                 string   `json:"email"`
-	GsmNumber             string   `json:"gsm_number"`
-	Address               string   `json:"address"`
-	Iban                  string   `json:"iban"`
-	TaxOffice             string   `json:"tax_office"`
-	LegalCompanyTitle     string   `json:"legal_company_title"`
-	CurrencyID            string   `json:"currency_id"`
-	SubmerchantExternalID string   `json:"sub_merchant_external_id"`
-	IdentityNumber        string   `json:"identity_number"`
-	SubmerchantType       string   `json:"sub_merchant_type"`
-	TaxNumber             string   `json:"tax_number"`
-	Labels                []string `json:"labels,omitempty"`
-	Status                string   `json:"status"`
-	SystemTime            int64    `json:"system_time"`
-	ContactName           string   `json:"contact_name"`
-	ContactSurname        string   `json:"contact_surname"`
-	VposID                string   `json:"vpos_id"`
-	ApprovalMode          *string  `json:"approval_mode,omitempty"`
-	ReleasePolicyID       *string  `json:"release_policy_id,omitempty"`
-	IdempotencyKey        string   `json:"idempotency_key,omitempty"`
+	// ProviderAccounts explicitly selects accounts in one environment; an empty list creates only the seller.
+	// It cannot be combined with VposID.
+	ProviderAccounts      *[]MarketplaceAccountTarget `json:"provider_accounts,omitempty"`
+	Locale                string                      `json:"locale"`
+	ConversationID        string                      `json:"conversation_id"`
+	Name                  string                      `json:"name"`
+	Email                 string                      `json:"email"`
+	GsmNumber             string                      `json:"gsm_number"`
+	Address               string                      `json:"address"`
+	Iban                  string                      `json:"iban"`
+	TaxOffice             string                      `json:"tax_office"`
+	LegalCompanyTitle     string                      `json:"legal_company_title"`
+	CurrencyID            string                      `json:"currency_id"`
+	SubmerchantExternalID string                      `json:"sub_merchant_external_id"`
+	IdentityNumber        string                      `json:"identity_number"`
+	SubmerchantType       string                      `json:"sub_merchant_type"`
+	TaxNumber             string                      `json:"tax_number"`
+	Labels                []string                    `json:"labels,omitempty"`
+	Status                string                      `json:"status"`
+	SystemTime            int64                       `json:"system_time"`
+	ContactName           string                      `json:"contact_name"`
+	ContactSurname        string                      `json:"contact_surname"`
+	// VposID targets only this account, using its configured environment; it never selects other accounts.
+	// When VposID and ProviderAccounts are omitted, only the seller is created.
+	VposID          string  `json:"vpos_id,omitempty"`
+	ApprovalMode    *string `json:"approval_mode,omitempty"`
+	ReleasePolicyID *string `json:"release_policy_id,omitempty"`
+	IdempotencyKey  string  `json:"idempotency_key,omitempty"`
+}
+
+type MarketplaceAccountTarget struct {
+	VposID      string `json:"vpos_id"`
+	Environment string `json:"environment"`
 }
 
 type MarketplaceSubmerchantCreateResponse struct {
