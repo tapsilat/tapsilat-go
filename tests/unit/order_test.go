@@ -1,13 +1,26 @@
 package unit_test
 
 import (
+	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	tapsilat "github.com/tapsilat/tapsilat-go"
 )
 
 func TestOrderCreation(t *testing.T) {
+	t.Run("BasketItemPayoutReleaseAtJSON", func(t *testing.T) {
+		releaseAt := time.Date(2026, time.September, 6, 12, 0, 0, 0, time.UTC)
+		withReleaseAt, err := json.Marshal(tapsilat.OrderBasketItem{Id: "stay_1", PayoutReleaseAt: &releaseAt})
+		assert.NoError(t, err)
+		assert.Contains(t, string(withReleaseAt), `"payout_release_at":"2026-09-06T12:00:00Z"`)
+
+		withoutReleaseAt, err := json.Marshal(tapsilat.OrderBasketItem{Id: "stay_2"})
+		assert.NoError(t, err)
+		assert.NotContains(t, string(withoutReleaseAt), "payout_release_at")
+	})
+
 	t.Run("BasicOrderCreation", func(t *testing.T) {
 		buyer := tapsilat.OrderBuyer{
 			Name:    "John",

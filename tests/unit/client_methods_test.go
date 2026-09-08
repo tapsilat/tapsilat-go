@@ -2,10 +2,13 @@ package unit_test
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -288,6 +291,105 @@ func TestCreateSubmerchant(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, uint64(200), res.Code)
 	assert.Equal(t, "created", res.Message)
+}
+
+func TestCreateMarketplaceSubmerchant(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "/api/v2/submerchants", r.URL.Path)
+		assert.Equal(t, "Bearer token_marketplace_create", r.Header.Get("Authorization"))
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		assert.JSONEq(t, `{
+			"locale":"tr","conversation_id":"conv_2","name":"Seller","email":"seller@example.com","gsm_number":"905551112233",
+			"address":"Istanbul","iban":"TR00","tax_office":"Besiktas","legal_company_title":"Seller Ltd",
+			"currency_id":"9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa","sub_merchant_external_id":"seller_ext",
+			"identity_number":"","sub_merchant_type":"PRIVATE_COMPANY","tax_number":"1234567890","status":"active",
+			"system_time":1710000000,"contact_name":"Jane","contact_surname":"Doe","vpos_id":"8f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa",
+			"approval_mode":"auto","release_policy_id":"7f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa","idempotency_key":"seller-create-1"
+		}`, string(body))
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"id":"sub_1","suborganization_id":"org_1","vpos_submerchant_id":"map_1","routing_reference":"route_1"}`))
+	}))
+	defer server.Close()
+
+	approvalMode := "auto"
+	releasePolicyID := "7f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa"
+	api := tapsilat.NewCustomAPI(server.URL+"/api/v1", "token_marketplace_create")
+	response, err := api.CreateMarketplaceSubmerchant(context.Background(), tapsilat.MarketplaceSubmerchantCreateRequest{
+		Locale: "tr", ConversationID: "conv_2", Name: "Seller", Email: "seller@example.com", GsmNumber: "905551112233",
+		Address: "Istanbul", Iban: "TR00", TaxOffice: "Besiktas", LegalCompanyTitle: "Seller Ltd",
+		CurrencyID: "9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa", SubmerchantExternalID: "seller_ext",
+		SubmerchantType: "PRIVATE_COMPANY", TaxNumber: "1234567890", Status: "active", SystemTime: 1710000000,
+		ContactName: "Jane", ContactSurname: "Doe", VposID: "8f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa", ApprovalMode: &approvalMode,
+		ReleasePolicyID: &releasePolicyID, IdempotencyKey: "seller-create-1",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "sub_1", response.ID)
+	assert.Equal(t, "map_1", response.VposSubmerchantID)
+	assert.Equal(t, "route_1", response.RoutingReference)
+}
+
+func TestRecordSubmerchantPayoutEvent(t *testing.T) {
+	occurredAt := time.Date(2026, time.September, 6, 12, 0, 0, 0, time.UTC)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "/api/v1/submerchant-payout-events", r.URL.Path)
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		assert.JSONEq(t, `{
+			"idempotency_key":"event_1","order_reference":"order_1","item_id":"stay_1","event_type":"service_completed",
+			"occurred_at":"2026-09-06T12:00:00Z","payload":{"source":"booking"}
+		}`, string(body))
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusAccepted)
+		_, _ = w.Write([]byte(`{
+			"id":"evt_1","idempotency_key":"event_1","order_reference":"order_1","item_id":"stay_1",
+			"event_type":"service_completed","occurred_at":"2026-09-06T12:00:00Z","payload":{"source":"booking"}
+		}`))
+	}))
+	defer server.Close()
+
+	api := tapsilat.NewCustomAPI(server.URL+"/api/v1", "token_event")
+	response, err := api.RecordSubmerchantPayoutEvent(context.Background(), tapsilat.SubmerchantPayoutEventRequest{
+		IdempotencyKey: "event_1", OrderReference: "order_1", ItemID: "stay_1", EventType: "service_completed",
+		OccurredAt: &occurredAt, Payload: map[string]any{"source": "booking"},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "evt_1", response.ID)
+	assert.Equal(t, occurredAt, response.OccurredAt)
+}
+
+func TestMarketplaceProvisioningResponseCompatibility(t *testing.T) {
+	for _, states := range [][]string{nil, {"completed", "completed"}, {"completed", "failed"}, {"failed", "failed"}} {
+		t.Run(strings.Join(states, "/"), func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				body := map[string]any{"id": "seller", "routing_reference": "seller"}
+				if states != nil {
+					items := []map[string]any{}
+					for _, state := range states {
+						items = append(items, map[string]any{"vpos_id": "account", "provider": "provider", "status": state,
+							"retryable": state == "failed", "error_message": "result", "provider_submerchant_key": "key", "vpos_submerchant_id": "mapping"})
+					}
+					body["provisionings"] = items
+				}
+				w.WriteHeader(http.StatusCreated)
+				require.NoError(t, json.NewEncoder(w).Encode(body))
+			}))
+			defer server.Close()
+			api := tapsilat.NewCustomAPI(server.URL+"/api/v1", "test")
+			result, err := api.CreateMarketplaceSubmerchant(context.Background(), tapsilat.MarketplaceSubmerchantCreateRequest{CurrencyID: "9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa"})
+			require.NoError(t, err)
+			require.Len(t, result.Provisionings, len(states))
+			for i, item := range result.Provisionings {
+				assert.Equal(t, states[i], item.Status)
+				assert.Equal(t, states[i] == "failed", item.Retryable)
+				assert.Equal(t, "key", item.ProviderSubmerchantKey)
+				assert.Equal(t, "mapping", item.VposSubmerchantID)
+			}
+		})
+	}
 }
 
 func TestGetSubmerchant(t *testing.T) {
