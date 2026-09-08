@@ -236,10 +236,11 @@ event, err := api.RecordSubmerchantPayoutEvent(ctx, tapsilat.SubmerchantPayoutEv
 })
 ```
 
-Create a logical marketplace seller and provision its compatible VPOS accounts:
+Create a logical marketplace seller and provision explicitly selected VPOS accounts:
 
 ```go
 seller, err := api.CreateMarketplaceSubmerchant(ctx, tapsilat.MarketplaceSubmerchantCreateRequest{
+    IdempotencyKey:    "seller-create-123",
     Locale:            "tr",
     ConversationID:    "seller-create-123",
     Name:              "Example Travel",
@@ -248,13 +249,76 @@ seller, err := api.CreateMarketplaceSubmerchant(ctx, tapsilat.MarketplaceSubmerc
     CurrencyID:        "TRY",
     SubmerchantType:   "PRIVATE_COMPANY",
     TaxNumber:         "1234567890",
-    VposID:            marketplaceVposID,
+    ProviderAccounts: &[]tapsilat.MarketplaceAccountTarget{
+        {VposID: marketplaceVposID, Environment: "TEST"},
+    },
 })
 ```
 
 Use `seller.RoutingReference` as the basket item's `SubMerchantKey`. This is an opaque, provider-neutral seller reference.
 
 After checking `err`, inspect `seller.Provisionings`: each entry identifies a VPOS account and reports `status`, `retryable`, and `error_message`. A successful API response confirms logical seller creation, not that every account is ready. Partial failures preserve completed mappings; recovery handles eligible unfinished operations. Only accounts with completed mappings can route this seller's payments. An absent or empty list from an older server does not confirm readiness. Reuse the same `IdempotencyKey` and request data when retrying creation.
+
+Omitting both account selectors, or providing an empty `ProviderAccounts` slice, creates only the logical seller. Legacy `VposID` selects exactly that account and uses its configured environment; it never registers other accounts. Do not combine `VposID` and `ProviderAccounts`. Explicit selections must belong to the token's organization and share one environment. Use `GetMarketplaceSellerContracts` to discover account requirements before submitting a profile.
+
+### Marketplace lifecycle API
+
+All marketplace operations use the organization and actor from the API token. Callers cannot override tenant scope in the request.
+
+| Operation | SDK methods |
+| --- | --- |
+| Seller directory and profile | `ListMarketplaceSubmerchants`, `GetMarketplaceSubmerchant`, `UpdateMarketplaceSubmerchant` |
+| Account contracts and state | `GetMarketplaceSellerContracts`, `GetMarketplaceSellerAccounts` |
+| Account lifecycle | `RunMarketplaceSellerAccountAction` |
+| Payout tracking and approval | `ListMarketplacePayouts`, `GetMarketplacePayout`, `ApproveMarketplacePayouts` |
+| Policy inspection | `ListMarketplaceApprovalPolicies`, `GetMarketplaceApprovalPolicy`, `ListMarketplaceReleasePolicies`, `GetMarketplaceReleasePolicy` |
+| Item business events | `RecordSubmerchantPayoutEvent` |
+
+Profile updates replace the profile and require the latest `Revision` returned by `GetMarketplaceSubmerchant`. Preserve fields you are not changing and omit account selectors. A stale revision is rejected. Inspect `ApprovalRequired`: when true, an administrator must review the proposed change. Account synchronization remains separately observable in `GetMarketplaceSellerAccounts`.
+
+For account operations, read the current row and choose an operation from its `Actions`. Send its exact `Revision` and `Environment`; never automatically select a production account. `retry` uses the original registration snapshot, while `resubmit` uses the current saved profile. The available operations are capability-dependent and can include `create`, `retry`, `resubmit`, `update`, `retrieve`, and `retry_sync`. Inspect the returned provisioning `Status` even when the HTTP request succeeds.
+
+Payout records are created by successful marketplace payment processing. There is no standalone create-payout API. A `service_completed` event applies only to the referenced order item and satisfies its business-event gate. It does not override a future release date, minimum delay, provider restriction, or manual approval requirement. Repeating an event with the same idempotency key and payload is safe; a conflicting payload is rejected.
+
+After reporting the event, inspect the payout before requesting approval:
+
+```go
+payout, err := api.GetMarketplacePayout(ctx, payoutID)
+if err != nil {
+    return err
+}
+if payout.EligibilityStatus != "eligible" || payout.ReleaseStatus != "awaiting_approval" {
+    return fmt.Errorf("payout is not awaiting eligible approval: %s / %s", payout.EligibilityStatus, payout.ReleaseStatus)
+}
+accepted, err := api.ApproveMarketplacePayouts(ctx, tapsilat.MarketplacePayoutApproval{
+    IDs: []string{payout.ID},
+})
+if err != nil {
+    return err
+}
+_ = accepted // "accepted" acknowledges local approval; poll GetMarketplacePayout for settlement.
+```
+
+Approval supports up to 100 payout IDs. All release gates are checked again by Admin. A repeated approval of an already released payout is rejected rather than creating another payout. Policy changes and eligibility overrides remain Admin-only.
+
+The legacy `ApproveSubmerchantPayment` endpoint now resolves an existing organization-scoped payout from the provider transaction reference and enters the same approval workflow. Unknown or ambiguous references are rejected. Prefer payout IDs, especially when an organization has multiple accounts. Legacy profile updates enforce marketplace immutable-field checks, but cannot express the caller's revision or review outcome; prefer `UpdateMarketplaceSubmerchant`.
+
+Legacy `DisapproveSubmerchantPayment` and `UpdateSubmerchantPaymentItem` still use direct provider operations and do not synchronize managed payout records. Do not use them for managed marketplace payouts until their local-state reconciliation is implemented or those calls are explicitly guarded. This remains a rollout blocker for full legacy workflow parity.
+
+### Local marketplace stack verification
+
+The opt-in test starts isolated Admin gRPC and Panel HTTP servers and calls them through this SDK; Monolog persistence is disabled by the test environment:
+
+```sh
+TAPSILAT_STACK_ADMIN_ROOT=/absolute/path/to/admin/backend \
+TAPSILAT_STACK_PANEL_ROOT=/absolute/path/to/panel/backend \
+CONFIG_PATH=/absolute/path/to/local/admin/config.yaml \
+go test -v ./tests/integration -run '^TestMarketplaceAdminPanelSDKStack$' -count=1
+```
+
+Use matching feature-stack revisions in all three repositories. The test uses an in-memory database, a temporary token verifier, and provider fixtures. It exercises real SDK HTTP, Panel routing, Admin gRPC handlers and domain services. It covers explicit account selection, idempotency, profile revisions, provider contracts/actions, payout materialization from a seeded paid order, item events, eligibility, approval and policy reads. It does not execute an order-create request, a real JWT login, provider registration, a card payment or provider settlement. Sandbox payment verification is a separate test.
+
+Deploy the matching Admin contract and handlers before Panel, and verify both before publishing a new SDK release. These methods require the matching backend stack; an older published SDK or server does not provide this API parity.
 
 ### Order with Payment Terms (Installments)
 

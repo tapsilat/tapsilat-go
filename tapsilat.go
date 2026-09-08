@@ -276,7 +276,8 @@ func (t *API) GetOrderPayments(ctx context.Context, payload GetOrderPaymentsRequ
 	return response, err
 }
 
-// ApproveSubmerchantPayment approves settlement of a marketplace item payment.
+// ApproveSubmerchantPayment submits the stored item payout to the approval workflow and returns accepted before settlement.
+// Deprecated: use ApproveMarketplacePayouts with an explicit payout ID.
 func (t *API) ApproveSubmerchantPayment(ctx context.Context, payload SubmerchantPaymentAction) (SubmerchantPaymentActionResponse, error) {
 	var response SubmerchantPaymentActionResponse
 	err := t.post(ctx, "/submerchants/payment/approve", payload, &response)
@@ -447,7 +448,7 @@ func (t *API) CreateMarketplaceSubmerchant(ctx context.Context, payload Marketpl
 	return response, err
 }
 
-// RecordSubmerchantPayoutEvent records a business event that can release an order item for payout.
+// RecordSubmerchantPayoutEvent records an item business event; time gates, approval and provider settlement remain separate.
 func (t *API) RecordSubmerchantPayoutEvent(ctx context.Context, payload SubmerchantPayoutEventRequest) (SubmerchantPayoutEventResponse, error) {
 	var response SubmerchantPayoutEventResponse
 	err := t.post(ctx, "/submerchant-payout-events", payload, &response)

@@ -86,6 +86,7 @@ type MarketplaceReleasePolicies struct {
 	Rows []MarketplaceReleasePolicy `json:"rows"`
 }
 
+// ListMarketplacePayouts returns filtered organization-scoped payouts and their release state.
 func (t *API) ListMarketplacePayouts(ctx context.Context, f MarketplacePayoutFilter) (MarketplacePayoutList, error) {
 	var response MarketplacePayoutList
 	q := url.Values{}
@@ -101,6 +102,7 @@ func (t *API) ListMarketplacePayouts(ctx context.Context, f MarketplacePayoutFil
 	err := t.marketplaceRequest(ctx, http.MethodGet, "/submerchant-payouts?"+q.Encode(), nil, &response)
 	return response, err
 }
+// GetMarketplacePayout returns a payout's eligibility, approval and settlement state.
 func (t *API) GetMarketplacePayout(ctx context.Context, id string) (MarketplacePayout, error) {
 	var response MarketplacePayout
 	err := t.marketplaceRequest(ctx, http.MethodGet, "/submerchant-payouts/"+url.PathEscape(id), nil, &response)
@@ -113,21 +115,25 @@ func (t *API) ApproveMarketplacePayouts(ctx context.Context, input MarketplacePa
 	err := t.marketplaceRequest(ctx, http.MethodPost, "/submerchant-payouts/approve", input, &response)
 	return response, err
 }
+// ListMarketplaceApprovalPolicies returns the organization's read-only approval rules.
 func (t *API) ListMarketplaceApprovalPolicies(ctx context.Context) (MarketplaceApprovalPolicies, error) {
 	var response MarketplaceApprovalPolicies
 	err := t.marketplaceRequest(ctx, http.MethodGet, "/marketplace/approval-policies", nil, &response)
 	return response, err
 }
+// GetMarketplaceApprovalPolicy returns a read-only approval rule.
 func (t *API) GetMarketplaceApprovalPolicy(ctx context.Context, id string) (MarketplaceApprovalPolicy, error) {
 	var response MarketplaceApprovalPolicy
 	err := t.marketplaceRequest(ctx, http.MethodGet, "/marketplace/approval-policies/"+url.PathEscape(id), nil, &response)
 	return response, err
 }
+// ListMarketplaceReleasePolicies returns the organization's read-only release policies.
 func (t *API) ListMarketplaceReleasePolicies(ctx context.Context) (MarketplaceReleasePolicies, error) {
 	var response MarketplaceReleasePolicies
 	err := t.marketplaceRequest(ctx, http.MethodGet, "/marketplace/release-policies", nil, &response)
 	return response, err
 }
+// GetMarketplaceReleasePolicy returns a read-only release policy.
 func (t *API) GetMarketplaceReleasePolicy(ctx context.Context, id string) (MarketplaceReleasePolicy, error) {
 	var response MarketplaceReleasePolicy
 	err := t.marketplaceRequest(ctx, http.MethodGet, "/marketplace/release-policies/"+url.PathEscape(id), nil, &response)

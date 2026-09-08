@@ -133,16 +133,19 @@ func (t *API) marketplaceRequest(ctx context.Context, method, path string, paylo
 	return t.do(req, response)
 }
 
+// ListMarketplaceSubmerchants returns a paginated seller directory scoped to the API token.
 func (t *API) ListMarketplaceSubmerchants(ctx context.Context, page, perPage int) (MarketplaceSellerList, error) {
 	var response MarketplaceSellerList
 	err := t.marketplaceRequest(ctx, http.MethodGet, "/submerchants?page="+strconv.Itoa(page)+"&per_page="+strconv.Itoa(perPage), nil, &response)
 	return response, err
 }
+// GetMarketplaceSubmerchant returns the current seller profile and its revision.
 func (t *API) GetMarketplaceSubmerchant(ctx context.Context, id string) (MarketplaceSeller, error) {
 	var response MarketplaceSeller
 	err := t.marketplaceRequest(ctx, http.MethodGet, "/submerchants/"+url.PathEscape(id), nil, &response)
 	return response, err
 }
+// UpdateMarketplaceSubmerchant replaces the profile at the supplied revision and reports whether review is required.
 func (t *API) UpdateMarketplaceSubmerchant(ctx context.Context, id string, input MarketplaceProfileUpdate) (MarketplaceProfileUpdateResponse, error) {
 	var response MarketplaceProfileUpdateResponse
 	currency, err := t.normalizeCurrencyID(ctx, input.CurrencyID)
@@ -153,6 +156,7 @@ func (t *API) UpdateMarketplaceSubmerchant(ctx context.Context, id string, input
 	err = t.marketplaceRequest(ctx, http.MethodPatch, "/submerchants/"+url.PathEscape(id), input, &response)
 	return response, err
 }
+// GetMarketplaceSellerContracts returns the selected accounts' requirements for a seller operation.
 func (t *API) GetMarketplaceSellerContracts(ctx context.Context, filter MarketplaceContractFilter) (MarketplaceContracts, error) {
 	var response MarketplaceContracts
 	currency, err := t.normalizeCurrencyID(ctx, filter.CurrencyID)
@@ -163,11 +167,13 @@ func (t *API) GetMarketplaceSellerContracts(ctx context.Context, filter Marketpl
 	err = t.marketplaceRequest(ctx, http.MethodGet, "/marketplace/seller-contracts?"+query.Encode(), nil, &response)
 	return response, err
 }
+// GetMarketplaceSellerAccounts returns account registration, synchronization and available actions.
 func (t *API) GetMarketplaceSellerAccounts(ctx context.Context, id string) (MarketplaceSellerAccounts, error) {
 	var response MarketplaceSellerAccounts
 	err := t.marketplaceRequest(ctx, http.MethodGet, "/submerchants/"+url.PathEscape(id)+"/providers", nil, &response)
 	return response, err
 }
+// RunMarketplaceSellerAccountAction executes an available account action at the supplied revision and environment.
 func (t *API) RunMarketplaceSellerAccountAction(ctx context.Context, id, vposID string, input MarketplaceAccountAction) (MarketplaceSubmerchantProvisioning, error) {
 	var response MarketplaceSubmerchantProvisioning
 	err := t.marketplaceRequest(ctx, http.MethodPost, "/submerchants/"+url.PathEscape(id)+"/providers/"+url.PathEscape(vposID)+"/actions", input, &response)
