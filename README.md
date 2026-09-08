@@ -303,7 +303,44 @@ Approval supports up to 100 payout IDs. All release gates are checked again by A
 
 The legacy `ApproveSubmerchantPayment` endpoint now resolves an existing organization-scoped payout from the provider transaction reference and enters the same approval workflow. Unknown or ambiguous references are rejected. Prefer payout IDs, especially when an organization has multiple accounts. Legacy profile updates enforce marketplace immutable-field checks, but cannot express the caller's revision or review outcome; prefer `UpdateMarketplaceSubmerchant`.
 
-Legacy `DisapproveSubmerchantPayment` and `UpdateSubmerchantPaymentItem` still use direct provider operations and do not synchronize managed payout records. Do not use them for managed marketplace payouts until their local-state reconciliation is implemented or those calls are explicitly guarded. This remains a rollout blocker for full legacy workflow parity.
+Legacy `DisapproveSubmerchantPayment` and `UpdateSubmerchantPaymentItem` resolve the stored, organization-scoped payout and use the same durable operation service as the new API. They select the payout's exact VPOS account and translate the seller reference through that account's mapping. Responses include `OperationID`; inspect `Status`, since `unknown` or `processing` does not mean success. Use a new `ConversationID` for each logical change. Repeating it with the same payload returns the original receipt; changing its payload is rejected. Without a conversation ID, identical requests share a deterministic key, so a later separate change requires a new conversation ID.
+
+### Payout allocation changes and approval withdrawal
+
+Read the payout's current revision, then submit `disapprove` or `update_item`:
+
+```go
+current, err := api.GetMarketplacePayout(ctx, payoutID)
+if err != nil {
+    return err
+}
+operation, err := api.RunMarketplacePayoutOperation(ctx, current.ID, tapsilat.MarketplacePayoutOperationInput{
+    Kind:            "update_item",
+    IdempotencyKey:  "booking-123-allocation-change-1",
+    Revision:        current.Revision,
+    SellerReference: seller.RoutingReference,
+    NetAmount:       "60.25",
+})
+if err != nil {
+    return err
+}
+_ = operation // Inspect Status, and retain ID for verification or explicit retry.
+```
+
+For `disapprove`, omit `SellerReference` and `NetAmount`. `update_item` requires a registered seller on the payout's existing account, matching currency, and a nonnegative amount with at most two decimal places within the captured item amount. Refunded/cancelled items and allocations with applied offsets cannot be reassigned. The original paid basket remains a historical snapshot; use the payout API for its current seller and allocation.
+
+Both operations preserve the payment-time release policy, dates and required business event. They require a fresh manual approval afterward. Operation `succeeded` confirms the local/provider change, not seller settlement.
+
+| Provider | Supported change window |
+| --- | --- |
+| iyzico | Update an unapproved paid item; withdraw a provider approval through the disapprove service. Withdraw approval before changing an already approved allocation. |
+| PayTR | Change the local transfer instruction before submission. Seller/beneficiary and refund allocation bookkeeping update in one transaction. Processing, submitted, settled and indeterminate transfers cannot be recalled through these operations. |
+
+The service persists an operation receipt before remote dispatch and sets `ActiveOperationID` and `ReleaseStatus = "processing"`. Workers, approvals and eligibility overrides cannot release that payout during an unresolved operation. Identical idempotent replays never redispatch the mutation. A known provider rejection leaves the original allocation intact and requires manual approval; submit a corrected operation with a new key and fresh payout revision.
+
+Use `GetMarketplacePayoutOperation` to read a receipt. For a timeout or lost response, `ReconcileMarketplacePayoutOperation` queries the provider and completes local bookkeeping only when the requested result is confirmed. `RetryMarketplacePayoutOperation` explicitly retries only after verifying that the provider still has the previous allocation/approval. An operation still within its one-minute in-flight window is not redispatched. Unverifiable results remain held. Changing account configuration during an unresolved operation requires restoring/verifying that account before recovery.
+
+The provider constraints are described in the official [iyzico approval documentation](https://docs.iyzico.com/en/products/marketplace/marketplace-implementation/approval), [iyzico item update documentation](https://docs.iyzico.com/en/products/marketplace/marketplace-implementation/submerchant/alt-uye-sorgulama-1) and [PayTR transfer documentation](https://dev.paytr.com/platform-transfer-talebi/transfer-talimatinin-verilmesi).
 
 ### Local marketplace stack verification
 
@@ -316,9 +353,9 @@ CONFIG_PATH=/absolute/path/to/local/admin/config.yaml \
 go test -v ./tests/integration -run '^TestMarketplaceAdminPanelSDKStack$' -count=1
 ```
 
-Use matching feature-stack revisions in all three repositories. The test uses an in-memory database, a temporary token verifier, and provider fixtures. It exercises real SDK HTTP, Panel routing, Admin gRPC handlers and domain services. It covers explicit account selection, idempotency, profile revisions, provider contracts/actions, payout materialization from a seeded paid order, item events, eligibility, approval and policy reads. It does not execute an order-create request, a real JWT login, provider registration, a card payment or provider settlement. Sandbox payment verification is a separate test.
+Use matching feature-stack revisions in all three repositories. The test uses an in-memory database, a temporary token verifier, and a local gateway contract fixture. It exercises real SDK HTTP, Panel routing, Admin gRPC handlers and domain services. It covers explicit account selection, idempotency, profile revisions, provider contracts/actions, payout materialization for both providers from seeded paid orders, item events, eligibility, approval, policy reads, legacy disapprove/item updates, versioned payout operations and lost-response reconciliation. It does not execute an order-create request, a real JWT login, remote provider registration, a card payment or provider settlement. Sandbox payment verification is a separate test.
 
-Deploy the matching Admin contract and handlers before Panel, and verify both before publishing a new SDK release. These methods require the matching backend stack; an older published SDK or server does not provide this API parity.
+Apply the Admin migration for `marketplace_payout_operations` and `marketplace_payouts.active_operation_id`, deploy matching Admin handlers/workers, then Panel, and verify both before publishing a new SDK release. These methods require the matching backend stack; an older published SDK or server does not provide this API parity.
 
 ### Order with Payment Terms (Installments)
 
