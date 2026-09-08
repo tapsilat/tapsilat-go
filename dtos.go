@@ -1254,6 +1254,7 @@ type SubmerchantPaymentAction struct {
 
 // SubmerchantPaymentActionResponse is the settlement action result returned by the payment provider.
 type SubmerchantPaymentActionResponse struct {
+	OperationID          string `json:"operation_id,omitempty"`
 	Status               string `json:"status,omitempty"`
 	Locale               string `json:"locale,omitempty"`
 	SystemTime           int64  `json:"system_time,omitempty"`
@@ -1273,6 +1274,7 @@ type SubmerchantPaymentItemUpdate struct {
 }
 
 type SubmerchantPaymentItemUpdateResponse struct {
+	OperationID          string `json:"operation_id,omitempty"`
 	Status               string `json:"status,omitempty"`
 	Locale               string `json:"locale,omitempty"`
 	SystemTime           int64  `json:"system_time,omitempty"`

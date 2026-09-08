@@ -284,14 +284,14 @@ func (t *API) ApproveSubmerchantPayment(ctx context.Context, payload Submerchant
 	return response, err
 }
 
-// DisapproveSubmerchantPayment rejects settlement of a marketplace item payment.
+// DisapproveSubmerchantPayment withdraws the stored payout's approval; callers must inspect Status and retain OperationID.
 func (t *API) DisapproveSubmerchantPayment(ctx context.Context, payload SubmerchantPaymentAction) (SubmerchantPaymentActionResponse, error) {
 	var response SubmerchantPaymentActionResponse
 	err := t.post(ctx, "/submerchants/payment/disapprove", payload, &response)
 	return response, err
 }
 
-// UpdateSubmerchantPaymentItem changes the seller or payout for a completed marketplace item.
+// UpdateSubmerchantPaymentItem changes a stored payout allocation; callers must inspect Status and retain OperationID.
 func (t *API) UpdateSubmerchantPaymentItem(ctx context.Context, payload SubmerchantPaymentItemUpdate) (SubmerchantPaymentItemUpdateResponse, error) {
 	var response SubmerchantPaymentItemUpdateResponse
 	err := t.put(ctx, "/submerchants/payment/item", payload, &response)
