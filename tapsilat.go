@@ -154,6 +154,9 @@ func (t *API) do(req *http.Request, response any) error {
 	if resp.StatusCode >= 400 {
 		return newAPIError(resp.StatusCode, resp.Status, body)
 	}
+	if response == nil || len(bytes.TrimSpace(body)) == 0 {
+		return nil
+	}
 
 	decode := json.NewDecoder(bytes.NewReader(body))
 	decode.UseNumber()

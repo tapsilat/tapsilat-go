@@ -15,6 +15,9 @@ func TestMarketplacePublicMethods(t *testing.T) {
 	paths := []string{}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		paths = append(paths, r.Method+" "+r.URL.Path)
+		if len(paths) == 2 {
+			require.Equal(t, "seller-external", r.URL.Query().Get("external_id"))
+		}
 		require.Equal(t, "Bearer scoped-token", r.Header.Get("Authorization"))
 		w.Header().Set("Content-Type", "application/json")
 		if strings.HasSuffix(r.URL.Path, "/actions") {
@@ -32,6 +35,8 @@ func TestMarketplacePublicMethods(t *testing.T) {
 	ctx := context.Background()
 	_, err := api.ListMarketplaceSubmerchants(ctx, 1, 20)
 	require.NoError(t, err)
+	_, err = api.ListMarketplaceSubmerchantsByExternalID(ctx, 1, 2, "seller-external")
+	require.NoError(t, err)
 	_, err = api.GetMarketplaceSubmerchant(ctx, "seller")
 	require.NoError(t, err)
 	_, err = api.GetMarketplaceSellerAccounts(ctx, "seller")
@@ -40,5 +45,5 @@ func TestMarketplacePublicMethods(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "failed", result.Status)
 	require.False(t, result.Retryable)
-	require.Equal(t, []string{"GET /api/v2/submerchants", "GET /api/v2/submerchants/seller", "GET /api/v2/submerchants/seller/providers", "POST /api/v2/submerchants/seller/providers/account/actions"}, paths)
+	require.Equal(t, []string{"GET /api/v2/submerchants", "GET /api/v2/submerchants", "GET /api/v2/submerchants/seller", "GET /api/v2/submerchants/seller/providers", "POST /api/v2/submerchants/seller/providers/account/actions"}, paths)
 }

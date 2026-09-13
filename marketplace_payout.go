@@ -84,6 +84,29 @@ type MarketplaceReleasePolicy struct {
 type MarketplaceApprovalPolicies struct {
 	Rows []MarketplaceApprovalPolicy `json:"rows"`
 }
+type MarketplaceApprovalSettings struct {
+	DefaultMode string `json:"default_mode"`
+}
+type MarketplaceApprovalPolicyInput struct {
+	Name           string   `json:"name"`
+	Priority       uint64   `json:"priority"`
+	Enabled        *bool    `json:"enabled"`
+	Provider       string   `json:"provider"`
+	MinAmount      *string  `json:"min_amount"`
+	MaxAmount      *string  `json:"max_amount"`
+	CurrencyID     string   `json:"currency_id"`
+	SubmerchantIDs []string `json:"submerchant_ids"`
+	LabelsAny      []string `json:"labels_any"`
+	Mode           string   `json:"mode"`
+}
+type MarketplaceReleasePolicyInput struct {
+	Name                  string `json:"name"`
+	Enabled               bool   `json:"enabled"`
+	Default               bool   `json:"default"`
+	MinimumDelaySeconds   int64  `json:"minimum_delay_seconds"`
+	ExplicitNotBefore     string `json:"explicit_not_before"`
+	RequiredExternalEvent string `json:"required_external_event"`
+}
 type MarketplaceReleasePolicies struct {
 	Rows []MarketplaceReleasePolicy `json:"rows"`
 }
@@ -145,4 +168,44 @@ func (t *API) GetMarketplaceReleasePolicy(ctx context.Context, id string) (Marke
 	var response MarketplaceReleasePolicy
 	err := t.marketplaceRequest(ctx, http.MethodGet, "/marketplace/release-policies/"+url.PathEscape(id), nil, &response)
 	return response, err
+}
+
+func (t *API) GetMarketplaceApprovalSettings(ctx context.Context) (MarketplaceApprovalSettings, error) {
+	var response MarketplaceApprovalSettings
+	err := t.marketplaceRequest(ctx, http.MethodGet, "/marketplace/approval-settings", nil, &response)
+	return response, err
+}
+
+func (t *API) UpdateMarketplaceApprovalSettings(ctx context.Context, input MarketplaceApprovalSettings) (MarketplaceApprovalSettings, error) {
+	var response MarketplaceApprovalSettings
+	err := t.marketplaceRequest(ctx, http.MethodPatch, "/marketplace/approval-settings", input, &response)
+	return response, err
+}
+
+func (t *API) CreateMarketplaceApprovalPolicy(ctx context.Context, input MarketplaceApprovalPolicyInput) error {
+	return t.marketplaceRequest(ctx, http.MethodPost, "/marketplace/approval-policies", input, nil)
+}
+
+func (t *API) UpdateMarketplaceApprovalPolicy(ctx context.Context, id string, input MarketplaceApprovalPolicyInput) error {
+	return t.marketplaceRequest(ctx, http.MethodPatch, "/marketplace/approval-policies/"+url.PathEscape(id), input, nil)
+}
+
+func (t *API) DeleteMarketplaceApprovalPolicy(ctx context.Context, id string) error {
+	return t.marketplaceRequest(ctx, http.MethodDelete, "/marketplace/approval-policies/"+url.PathEscape(id), nil, nil)
+}
+
+func (t *API) CreateMarketplaceReleasePolicy(ctx context.Context, input MarketplaceReleasePolicyInput) (MarketplaceReleasePolicy, error) {
+	var response MarketplaceReleasePolicy
+	err := t.marketplaceRequest(ctx, http.MethodPost, "/marketplace/release-policies", input, &response)
+	return response, err
+}
+
+func (t *API) UpdateMarketplaceReleasePolicy(ctx context.Context, id string, input MarketplaceReleasePolicyInput) (MarketplaceReleasePolicy, error) {
+	var response MarketplaceReleasePolicy
+	err := t.marketplaceRequest(ctx, http.MethodPatch, "/marketplace/release-policies/"+url.PathEscape(id), input, &response)
+	return response, err
+}
+
+func (t *API) DeleteMarketplaceReleasePolicy(ctx context.Context, id string) error {
+	return t.marketplaceRequest(ctx, http.MethodDelete, "/marketplace/release-policies/"+url.PathEscape(id), nil, nil)
 }
