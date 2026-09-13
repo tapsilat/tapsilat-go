@@ -84,6 +84,17 @@ Notes:
 - Script sets `User-Agent: Go-http-client/1.1` while generating token to match SDK request context and avoid local auth mismatch.
 - Integration test requires `TAPSILAT_IT_SUBMERCHANT_ID` and `TAPSILAT_IT_SUBORGANIZATION_ID`; otherwise test code skips it.
 
+## Marketplace payout and policy APIs
+
+Marketplace methods use the version 2 Panel routes even when the client endpoint ends in `/api/v1`.
+They include exact seller lookup by `external_id`, payout list/read/bulk approval, organization
+approval settings, and approval/release policy create, update and delete operations. Delete methods
+accept an empty successful response body.
+
+Bulk payout approval accepts at most 100 IDs. Callers should approve only payouts whose
+`eligibility_status` is `eligible` and whose `release_status` is `awaiting_approval`; the server
+revalidates both conditions.
+
 ## Context Usage
 
 All API methods require a `context.Context` parameter. This allows you to control request timeouts and cancellation:
