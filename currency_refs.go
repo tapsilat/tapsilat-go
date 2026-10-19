@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 	"maps"
-	"regexp"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
-var uuidRefRegex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
-
-// ResolveCurrencyID returns the organization currency UUID for ref. A UUID is returned unchanged;
-// a unit such as "TRY" is looked up in GetOrganizationCurrencies, whose result is cached.
+// ResolveCurrencyID returns the organization currency UUID for ref. A UUID is returned in its
+// canonical lowercase form; a unit such as "TRY" is looked up in GetOrganizationCurrencies,
+// whose result is cached.
 // Most endpoints accept units directly, so this is only needed where a UUID is required.
 func (t *API) ResolveCurrencyID(ctx context.Context, ref string) (string, error) {
 	return t.normalizeCurrencyID(ctx, ref)
@@ -27,8 +27,8 @@ func (t *API) normalizeCurrencyID(ctx context.Context, ref string) (string, erro
 		}
 	}
 
-	if uuidRefRegex.MatchString(trimmedRef) {
-		return trimmedRef, nil
+	if id, err := uuid.Parse(trimmedRef); err == nil {
+		return id.String(), nil
 	}
 
 	currencyIDsByUnit, err := t.getOrganizationCurrencyIDsByUnit(ctx)

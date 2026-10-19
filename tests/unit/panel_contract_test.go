@@ -326,6 +326,28 @@ func TestApprovalPolicyCurrencyResolution(t *testing.T) {
 	})
 }
 
+func TestResolveCurrencyIDAcceptsUUIDForms(t *testing.T) {
+	const canonical = "9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Errorf("a UUID must not trigger a currency lookup, got %s", r.URL.Path)
+	}))
+	defer server.Close()
+	api := tapsilat.NewCustomAPI(server.URL, "token")
+
+	for _, ref := range []string{
+		canonical,
+		"9F4050E8-1111-4F25-B4EF-AAAAAAAAAAAA",
+		"{9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa}",
+		"urn:uuid:9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa",
+		"9f4050e811114f25b4efaaaaaaaaaaaa",
+		"  " + canonical + "  ",
+	} {
+		resolved, err := api.ResolveCurrencyID(context.Background(), ref)
+		require.NoError(t, err, ref)
+		assert.Equal(t, canonical, resolved, ref)
+	}
+}
+
 func TestPanelResponseFieldsDecode(t *testing.T) {
 	ctx := context.Background()
 
