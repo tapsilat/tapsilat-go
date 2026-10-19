@@ -552,6 +552,31 @@ func main() {
 }
 ```
 
+### Car Loan Limit and Payment Plan
+
+```go
+limit, err := api.CarLoanCheckLimit(ctx, tapsilat.CarLoanCheckLimitRequest{
+	ReferenceID:     "vehicle-ref",
+	Tckn:            "11111111111",
+	PhoneNumber:     "5551112233",
+	Dob:             "1990-01-01",
+	RequestedAmount: 400000,
+	SellerID:        "dealer-seller-code",
+	EmployeeID:      "dealer-employee-code",
+	Vehicle:         &tapsilat.CarLoanVehicle{Model: "ADRIA CORAL XL 600 DP", Year: 2024, Plate: "34ABC123"},
+})
+if err != nil {
+	return err
+}
+
+offer := limit.Offers[0]
+plan, err := api.CarLoanPaymentPlan(ctx, tapsilat.CarLoanPaymentPlanRequest{
+	CredentialID: offer.CredentialID,
+	OfferID:      offer.ID,
+	Term:         36,
+})
+```
+
 ### Subscription Operations
 
 #### Create Subscription
@@ -780,6 +805,16 @@ All API methods now require a `context.Context` as the first parameter for bette
 - `ListSubscriptions(ctx context.Context, page, perPage int) (PaginatedData, error)`
 - `CancelSubscription(ctx context.Context, payload SubscriptionCancelRequest) error`
 - `RedirectSubscription(ctx context.Context, payload SubscriptionRedirectRequest) (SubscriptionRedirectResponse, error)`
+
+### Car Loan Operations
+
+- `CarLoanProviders(ctx context.Context) (CarLoanProvidersResponse, error)`
+- `CarLoanCheckLimit(ctx context.Context, payload CarLoanCheckLimitRequest) (CarLoanCheckLimitResponse, error)`
+- `CarLoanPaymentPlan(ctx context.Context, payload CarLoanPaymentPlanRequest) (CarLoanPaymentPlanResponse, error)`
+- `CarLoanApply(ctx context.Context, payload CarLoanApplyRequest) (CarLoanApplyResponse, error)`
+- `CarLoanStatus(ctx context.Context, payload CarLoanStatusRequest) (CarLoanStatusResponse, error)`
+
+These call the panel's `/loan/car/*` routes. The panel runs them on the mono-loan instance the token's organization is set up with (its Mono / Car Loan provider in admin), so quote, payment plan and application always reach the same instance. The organization comes from the token; it is never sent in the request.
 
 ### Utility Operations
 
