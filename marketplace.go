@@ -1,9 +1,7 @@
 package tapsilat
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -62,6 +60,8 @@ type MarketplaceSellerContract struct {
 type MarketplaceContracts struct {
 	Contracts map[string]MarketplaceSellerContract `json:"contracts"`
 }
+
+// MarketplaceContractFilter selects seller contracts; CurrencyID accepts a currency UUID or unit such as "TRY".
 type MarketplaceContractFilter struct {
 	CurrencyID string
 	SellerType string
@@ -98,6 +98,7 @@ type MarketplaceSellerAccount struct {
 	Sync                       *MarketplaceSynchronization          `json:"sync,omitempty"`
 	RegistrationProfileChanged bool                                 `json:"registration_profile_changed"`
 	RegistrationMissingFields  []string                             `json:"registration_missing_fields,omitempty"`
+	ProviderSubmerchantKey     string                               `json:"provider_submerchant_key,omitempty"`
 }
 type MarketplaceSellerAccounts struct {
 	Rows []MarketplaceSellerAccount `json:"rows"`
@@ -116,21 +117,7 @@ func (t *API) marketplaceRequest(ctx context.Context, method, path string, paylo
 	if err != nil {
 		return err
 	}
-	var body []byte
-	if payload != nil {
-		body, err = json.Marshal(payload)
-		if err != nil {
-			return err
-		}
-	}
-	req, err := http.NewRequestWithContext(ctx, method, endpoint+path, bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-	if payload != nil {
-		req.Header.Set("Content-Type", "application/json")
-	}
-	return t.do(req, response)
+	return t.send(ctx, method, endpoint+path, payload, response)
 }
 
 // ListMarketplaceSubmerchants returns a paginated seller directory scoped to the API token.
@@ -159,24 +146,15 @@ func (t *API) GetMarketplaceSubmerchant(ctx context.Context, id string) (Marketp
 // UpdateMarketplaceSubmerchant replaces the profile at the supplied revision and reports whether review is required.
 func (t *API) UpdateMarketplaceSubmerchant(ctx context.Context, id string, input MarketplaceProfileUpdate) (MarketplaceProfileUpdateResponse, error) {
 	var response MarketplaceProfileUpdateResponse
-	currency, err := t.normalizeCurrencyID(ctx, input.CurrencyID)
-	if err != nil {
-		return response, err
-	}
-	input.CurrencyID = currency
-	err = t.marketplaceRequest(ctx, http.MethodPatch, "/submerchants/"+url.PathEscape(id), input, &response)
+	err := t.marketplaceRequest(ctx, http.MethodPatch, "/submerchants/"+url.PathEscape(id), input, &response)
 	return response, err
 }
 
 // GetMarketplaceSellerContracts returns the selected accounts' requirements for a seller operation.
 func (t *API) GetMarketplaceSellerContracts(ctx context.Context, filter MarketplaceContractFilter) (MarketplaceContracts, error) {
 	var response MarketplaceContracts
-	currency, err := t.normalizeCurrencyID(ctx, filter.CurrencyID)
-	if err != nil {
-		return response, err
-	}
-	query := url.Values{"currency_id": {currency}, "seller_type": {filter.SellerType}, "operation": {filter.Operation}, "vpos_id": filter.VposIDs}
-	err = t.marketplaceRequest(ctx, http.MethodGet, "/marketplace/seller-contracts?"+query.Encode(), nil, &response)
+	query := url.Values{"currency_id": {filter.CurrencyID}, "seller_type": {filter.SellerType}, "operation": {filter.Operation}, "vpos_id": filter.VposIDs}
+	err := t.marketplaceRequest(ctx, http.MethodGet, "/marketplace/seller-contracts?"+query.Encode(), nil, &response)
 	return response, err
 }
 

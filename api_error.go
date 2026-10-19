@@ -1,8 +1,10 @@
 package tapsilat
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 type APIError struct {
@@ -10,7 +12,9 @@ type APIError struct {
 	Status     string
 	Code       string
 	Message    string
-	RawBody    string
+	// Errors holds per-field validation messages when the server returns them.
+	Errors  map[string]any
+	RawBody string
 }
 
 func (e *APIError) Error() string {
@@ -37,7 +41,9 @@ func newAPIError(statusCode int, status string, body []byte) *APIError {
 	}
 
 	var payload map[string]any
-	if json.Unmarshal(body, &payload) != nil {
+	decode := json.NewDecoder(bytes.NewReader(body))
+	decode.UseNumber()
+	if decode.Decode(&payload) != nil {
 		return err
 	}
 
@@ -52,6 +58,23 @@ func newAPIError(statusCode int, status string, body []byte) *APIError {
 	} else if value, ok := payload["error"]; ok {
 		err.Message = fmt.Sprint(value)
 	}
+	if value, ok := payload["errors"].(map[string]any); ok {
+		err.Errors = value
+	}
 
 	return err
+}
+
+// isHTMLResponse reports whether a successful response carries an HTML page instead of JSON.
+func isHTMLResponse(contentType string, body []byte) bool {
+	return strings.Contains(strings.ToLower(contentType), "text/html") || bytes.HasPrefix(body, []byte("<"))
+}
+
+func newUnexpectedResponseError(statusCode int, status, contentType string, body []byte) *APIError {
+	return &APIError{
+		StatusCode: statusCode,
+		Status:     status,
+		Message:    fmt.Sprintf("unexpected non-JSON response (Content-Type %q); check that the endpoint URL and route are correct", contentType),
+		RawBody:    string(body),
+	}
 }

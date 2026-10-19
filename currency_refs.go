@@ -8,8 +8,11 @@ import (
 	"strings"
 )
 
-var uuidRefRegex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`)
+var uuidRefRegex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
+// ResolveCurrencyID returns the organization currency UUID for ref. A UUID is returned unchanged;
+// a unit such as "TRY" is looked up in GetOrganizationCurrencies, whose result is cached.
+// Most endpoints accept units directly, so this is only needed where a UUID is required.
 func (t *API) ResolveCurrencyID(ctx context.Context, ref string) (string, error) {
 	return t.normalizeCurrencyID(ctx, ref)
 }
@@ -44,39 +47,12 @@ func (t *API) normalizeCurrencyID(ctx context.Context, ref string) (string, erro
 	}
 }
 
-func (t *API) normalizeCurrencyIDs(ctx context.Context, refs []string) ([]string, error) {
-	if len(refs) == 0 {
-		return nil, &ValidationError{
-			StatusCode: 400,
-			Code:       0,
-			Message:    "currencies must contain at least one currency reference",
-		}
+// resolveOptionalCurrencyID resolves ref when it is set and leaves an empty value unchanged.
+func (t *API) resolveOptionalCurrencyID(ctx context.Context, ref string) (string, error) {
+	if strings.TrimSpace(ref) == "" {
+		return ref, nil
 	}
-
-	normalized := make([]string, 0, len(refs))
-	seen := make(map[string]struct{}, len(refs))
-
-	for _, ref := range refs {
-		currencyID, err := t.normalizeCurrencyID(ctx, ref)
-		if err != nil {
-			return nil, err
-		}
-		if _, ok := seen[currencyID]; ok {
-			continue
-		}
-		seen[currencyID] = struct{}{}
-		normalized = append(normalized, currencyID)
-	}
-
-	if len(normalized) == 0 {
-		return nil, &ValidationError{
-			StatusCode: 400,
-			Code:       0,
-			Message:    "currencies must contain at least one currency reference",
-		}
-	}
-
-	return normalized, nil
+	return t.normalizeCurrencyID(ctx, ref)
 }
 
 func (t *API) getOrganizationCurrencyIDsByUnit(ctx context.Context) (map[string]string, error) {

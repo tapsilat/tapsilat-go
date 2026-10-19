@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	tapsilat "github.com/tapsilat/tapsilat-go"
 )
 
@@ -247,7 +248,7 @@ func TestOrderCreation(t *testing.T) {
 		paymentTerms := []tapsilat.OrderPaymentTerm{
 			{
 				Amount:          &amount1,
-				DueDate:         "2024-01-15",
+				DueDate:         "2024-01-15T00:00:00Z",
 				Required:        &required1,
 				TermSequence:    &sequence1,
 				Status:          "pending",
@@ -255,7 +256,7 @@ func TestOrderCreation(t *testing.T) {
 			},
 			{
 				Amount:          &amount2,
-				DueDate:         "2024-02-15",
+				DueDate:         "2024-02-15T00:00:00Z",
 				Required:        &required2,
 				TermSequence:    &sequence2,
 				Status:          "pending",
@@ -274,7 +275,7 @@ func TestOrderCreation(t *testing.T) {
 		assert.Equal(t, 100.0, order.Amount)
 		assert.Len(t, order.PaymentTerms, 2)
 		assert.Equal(t, 50.0, *order.PaymentTerms[0].Amount)
-		assert.Equal(t, "2024-01-15", order.PaymentTerms[0].DueDate)
+		assert.Equal(t, "2024-01-15T00:00:00Z", order.PaymentTerms[0].DueDate)
 		assert.True(t, *order.PaymentTerms[0].Required)
 		assert.Equal(t, 1, *order.PaymentTerms[0].TermSequence)
 		assert.Equal(t, "pending", order.PaymentTerms[0].Status)
@@ -285,51 +286,55 @@ func TestOrderCreation(t *testing.T) {
 func TestPaymentTermDTOs(t *testing.T) {
 	t.Run("OrderPaymentTermCreateDTO", func(t *testing.T) {
 		sequence := 1
-		createDTO := tapsilat.OrderPaymentTermCreateDTO{
-			OrderReferenceID: "order_123",
-			Amount:           100.0,
-			DueDate:          "2024-01-15",
-			Required:         true,
-			Data:             "test_data",
-			TermSequence:     &sequence,
-		}
-
-		assert.Equal(t, "order_123", createDTO.OrderReferenceID)
-		assert.Equal(t, 100.0, createDTO.Amount)
-		assert.Equal(t, "2024-01-15", createDTO.DueDate)
-		assert.True(t, createDTO.Required)
-		assert.Equal(t, "test_data", createDTO.Data)
-		assert.Equal(t, 1, *createDTO.TermSequence)
+		body, err := json.Marshal(tapsilat.OrderPaymentTermCreateDTO{
+			OrderID:         "order_123",
+			Amount:          100.0,
+			DueDate:         "2024-01-15",
+			Required:        true,
+			Data:            "test_data",
+			TermSequence:    &sequence,
+			TermReferenceID: "term_ref_1",
+			Status:          "pending",
+		})
+		require.NoError(t, err)
+		assert.JSONEq(t, `{"order_id":"order_123","term_sequence":1,"required":true,"amount":100,"due_date":"2024-01-15","term_reference_id":"term_ref_1","status":"pending","data":"test_data"}`, string(body))
 	})
 
 	t.Run("OrderPaymentTermUpdateDTO", func(t *testing.T) {
 		amount := 150.0
 		required := false
-
-		updateDTO := tapsilat.OrderPaymentTermUpdateDTO{
+		sequence := 2
+		body, err := json.Marshal(tapsilat.OrderPaymentTermUpdateDTO{
 			TermReferenceID: "term_123",
+			TermSequence:    &sequence,
 			Amount:          &amount,
 			DueDate:         "2024-02-15",
+			PaidDate:        "2024-02-16",
 			Required:        &required,
-			Data:            "updated_data",
-		}
-
-		assert.Equal(t, "term_123", updateDTO.TermReferenceID)
-		assert.Equal(t, 150.0, *updateDTO.Amount)
-		assert.Equal(t, "2024-02-15", updateDTO.DueDate)
-		assert.False(t, *updateDTO.Required)
-		assert.Equal(t, "updated_data", updateDTO.Data)
+			Status:          "paid",
+		})
+		require.NoError(t, err)
+		assert.JSONEq(t, `{"term_reference_id":"term_123","term_sequence":2,"required":false,"amount":150,"due_date":"2024-02-15","paid_date":"2024-02-16","status":"paid"}`, string(body))
 	})
 
 	t.Run("OrderTermRefundRequest", func(t *testing.T) {
-		amount := 75.0
-		refundRequest := tapsilat.OrderTermRefundRequest{
-			TermReferenceID: "term_123",
-			Amount:          &amount,
-		}
+		body, err := json.Marshal(tapsilat.OrderTermRefundRequest{
+			ReferenceID:   "order_ref_1",
+			TermID:        "term_id_1",
+			TermPaymentID: "term_payment_1",
+			Amount:        75.0,
+		})
+		require.NoError(t, err)
+		assert.JSONEq(t, `{"reference_id":"order_ref_1","term_id":"term_id_1","term_payment_id":"term_payment_1","amount":75}`, string(body))
+	})
 
-		assert.Equal(t, "term_123", refundRequest.TermReferenceID)
-		assert.Equal(t, 75.0, *refundRequest.Amount)
+	t.Run("OrderBuyerSendsBirthDate", func(t *testing.T) {
+		body, err := json.Marshal(tapsilat.OrderBuyer{BirdthDate: "1990-01-01"})
+		require.NoError(t, err)
+		var payload map[string]any
+		require.NoError(t, json.Unmarshal(body, &payload))
+		assert.Equal(t, "1990-01-01", payload["birth_date"])
+		assert.NotContains(t, payload, "birdth_date")
 	})
 }
 

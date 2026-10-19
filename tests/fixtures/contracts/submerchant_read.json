@@ -6,10 +6,15 @@
   "email": "tenant@example.com",
   "gsm_number": "+905551112233",
   "address": "Istanbul",
-  "sub_merchant_type": "PRIVATE_COMPANY",
+  "iban": "TR330006100519786457841326",
+  "tax_office": "Besiktas",
+  "currency_id": "9f4050e8-1111-4f25-b4ef-aaaaaaaaaaaa",
+  "sub_merchant_external_id": "tenant-ext-1",
+  "tax_number": "1234567890",
   "sub_merchant_key": "sm_key_1",
   "organization_id": "org_1",
   "status": "active",
+  "system_time": 1710000000,
   "contact_name": "Jane",
   "contact_surname": "Doe"
 }
