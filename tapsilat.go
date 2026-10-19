@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -60,17 +61,7 @@ func (t *API) postVersion(ctx context.Context, version, path string, payload any
 }
 
 func (t *API) postTo(ctx context.Context, requestURL string, payload any, response any) error {
-	jsonPayload, err := json.Marshal(payload)
-	if err != nil {
-		return err
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, requestURL, bytes.NewBuffer(jsonPayload))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	return t.do(req, response)
+	return t.send(ctx, http.MethodPost, requestURL, payload, response)
 }
 
 func versionedEndpoint(endpoint, version string) (string, error) {
@@ -89,48 +80,42 @@ func versionedEndpoint(endpoint, version string) (string, error) {
 }
 
 func (t *API) patch(ctx context.Context, path string, payload any, response any) error {
-	url := t.EndPoint + path
-	jsonPayload, err := json.Marshal(payload)
-	if err != nil {
-		return err
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, url, bytes.NewBuffer(jsonPayload))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	return t.do(req, response)
+	return t.send(ctx, http.MethodPatch, t.EndPoint+path, payload, response)
 }
 
 func (t *API) put(ctx context.Context, path string, payload any, response any) error {
-	url := t.EndPoint + path
-	jsonPayload, err := json.Marshal(payload)
-	if err != nil {
-		return err
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewBuffer(jsonPayload))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	return t.do(req, response)
+	return t.send(ctx, http.MethodPut, t.EndPoint+path, payload, response)
 }
 
 func (t *API) get(ctx context.Context, path string, response any) error {
-	url := t.EndPoint + path
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return err
-	}
-	return t.do(req, response)
+	return t.send(ctx, http.MethodGet, t.EndPoint+path, nil, response)
 }
 
 func (t *API) delete(ctx context.Context, path string, response any) error {
-	url := t.EndPoint + path
-	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+	return t.send(ctx, http.MethodDelete, t.EndPoint+path, nil, response)
+}
+
+// deleteWithBody sends a DELETE request with a JSON body, which some endpoints require.
+func (t *API) deleteWithBody(ctx context.Context, path string, payload any, response any) error {
+	return t.send(ctx, http.MethodDelete, t.EndPoint+path, payload, response)
+}
+
+// send issues a request to requestURL, encoding payload as JSON when it is not nil.
+func (t *API) send(ctx context.Context, method, requestURL string, payload any, response any) error {
+	var body io.Reader
+	if payload != nil {
+		jsonPayload, err := json.Marshal(payload)
+		if err != nil {
+			return err
+		}
+		body = bytes.NewReader(jsonPayload)
+	}
+	req, err := http.NewRequestWithContext(ctx, method, requestURL, body)
 	if err != nil {
 		return err
+	}
+	if payload != nil {
+		req.Header.Set("Content-Type", "application/json")
 	}
 	return t.do(req, response)
 }
@@ -154,7 +139,15 @@ func (t *API) do(req *http.Request, response any) error {
 	if resp.StatusCode >= 400 {
 		return newAPIError(resp.StatusCode, resp.Status, body)
 	}
-	if response == nil || len(bytes.TrimSpace(body)) == 0 {
+	trimmed := bytes.TrimSpace(body)
+	if len(trimmed) == 0 {
+		return nil
+	}
+	// A deployment that serves the panel UI answers unknown routes with its HTML page and status 200.
+	if isHTMLResponse(resp.Header.Get("Content-Type"), trimmed) {
+		return newUnexpectedResponseError(resp.StatusCode, resp.Status, resp.Header.Get("Content-Type"), body)
+	}
+	if response == nil {
 		return nil
 	}
 
@@ -197,49 +190,64 @@ func (t *API) CreateOrder(ctx context.Context, payload Order) (OrderResponse, er
 
 func (t *API) GetOrder(ctx context.Context, orderReferenceID string) (OrderDetail, error) {
 	var response OrderDetail
-	err := t.get(ctx, "/order/"+orderReferenceID, &response)
+	err := t.get(ctx, "/order/"+url.PathEscape(orderReferenceID), &response)
 	return response, err
 }
 
 func (t *API) GetOrderByConversationID(ctx context.Context, conversationID string) (OrderDetail, error) {
 	var response OrderDetail
-	err := t.get(ctx, "/order/conversation/"+conversationID, &response)
+	err := t.get(ctx, "/order/conversation/"+url.PathEscape(conversationID), &response)
 	return response, err
 }
 
 func (t *API) GetOrders(ctx context.Context, page, perPage, buyerID string) (PaginatedData, error) {
 	var response PaginatedData
-	path := fmt.Sprintf("/order/list?page=%s&per_page=%s", page, perPage)
+	query := url.Values{"page": {page}, "per_page": {perPage}}
 	if buyerID != "" {
-		path += "&buyer_id=" + buyerID
-	}
-	err := t.get(ctx, path, &response)
-	return response, err
-}
-
-func (t *API) GetOrderList(ctx context.Context, page, perPage int, startDate, endDate, organizationID, relatedReferenceID string) (PaginatedData, error) {
-	var response PaginatedData
-	query := url.Values{}
-	query.Set("page", fmt.Sprintf("%d", page))
-	query.Set("per_page", fmt.Sprintf("%d", perPage))
-	if startDate != "" {
-		query.Set("start_date", startDate)
-	}
-	if endDate != "" {
-		query.Set("end_date", endDate)
-	}
-	if organizationID != "" {
-		query.Set("organization_id", organizationID)
-	}
-	if relatedReferenceID != "" {
-		query.Set("related_reference_id", relatedReferenceID)
+		query.Set("buyer_id", buyerID)
 	}
 	err := t.get(ctx, "/order/list?"+query.Encode(), &response)
 	return response, err
 }
 
-func (t *API) GetOrderSubmerchants(ctx context.Context, page, perPage int) (PaginatedData, error) {
+func (t *API) GetOrderList(ctx context.Context, page, perPage int, startDate, endDate, organizationID, relatedReferenceID string) (PaginatedData, error) {
+	return t.GetOrderListWithFilter(ctx, OrderListFilter{
+		Page:               page,
+		PerPage:            perPage,
+		StartDate:          startDate,
+		EndDate:            endDate,
+		OrganizationID:     organizationID,
+		RelatedReferenceID: relatedReferenceID,
+	})
+}
+
+// GetOrderListWithFilter lists orders with every filter the order list endpoint accepts.
+func (t *API) GetOrderListWithFilter(ctx context.Context, filter OrderListFilter) (PaginatedData, error) {
 	var response PaginatedData
+	query := url.Values{}
+	query.Set("page", strconv.Itoa(filter.Page))
+	query.Set("per_page", strconv.Itoa(filter.PerPage))
+	for key, value := range map[string]string{
+		"start_date":           filter.StartDate,
+		"end_date":             filter.EndDate,
+		"organization_id":      filter.OrganizationID,
+		"conversation_id":      filter.ConversationID,
+		"related_reference_id": filter.RelatedReferenceID,
+		"buyer_id":             filter.BuyerID,
+	} {
+		if value != "" {
+			query.Set(key, value)
+		}
+	}
+	if filter.Status != nil {
+		query.Set("status", strconv.Itoa(*filter.Status))
+	}
+	err := t.get(ctx, "/order/list?"+query.Encode(), &response)
+	return response, err
+}
+
+func (t *API) GetOrderSubmerchants(ctx context.Context, page, perPage int) (OrderSubmerchantListResponse, error) {
+	var response OrderSubmerchantListResponse
 	path := fmt.Sprintf("/order/submerchants?page=%d&per_page=%d", page, perPage)
 	err := t.get(ctx, path, &response)
 	return response, err
@@ -255,19 +263,29 @@ func (t *API) GetCheckoutURL(ctx context.Context, referenceID string) (string, e
 
 func (t *API) GetOrderStatus(ctx context.Context, orderReferenceID string) (OrderStatus, error) {
 	var orderStatus OrderStatus
-	err := t.get(ctx, "/order/"+orderReferenceID+"/status", &orderStatus)
+	err := t.get(ctx, "/order/"+url.PathEscape(orderReferenceID)+"/status", &orderStatus)
 	return orderStatus, err
 }
 
 func (t *API) GetOrderPaymentDetails(ctx context.Context, referenceID string) (map[string]any, error) {
 	var response map[string]any
-	err := t.get(ctx, "/order/"+referenceID+"/payment-details", &response)
+	err := t.get(ctx, "/order/"+url.PathEscape(referenceID)+"/payment-details", &response)
 	return response, err
 }
 
-func (t *API) GetOrderTransactions(ctx context.Context, referenceID string) (map[string]any, error) {
+// GetOrderPaymentDetailsByConversationID returns an order's payment details looked up by its conversation ID.
+func (t *API) GetOrderPaymentDetailsByConversationID(ctx context.Context, conversationID string) (map[string]any, error) {
 	var response map[string]any
-	err := t.get(ctx, "/order/"+referenceID+"/transactions", &response)
+	err := t.post(ctx, "/order/payment-details", map[string]string{
+		"conversation_id": conversationID,
+	}, &response)
+	return response, err
+}
+
+// GetOrderTransactions returns the order's transactions; the list is empty when there are none.
+func (t *API) GetOrderTransactions(ctx context.Context, referenceID string) ([]map[string]any, error) {
+	var response []map[string]any
+	err := t.get(ctx, "/order/"+url.PathEscape(referenceID)+"/transactions", &response)
 	return response, err
 }
 
@@ -276,6 +294,13 @@ func (t *API) GetOrderTransactions(ctx context.Context, referenceID string) (map
 func (t *API) GetOrderPayments(ctx context.Context, payload GetOrderPaymentsRequest) (GetOrderPaymentsResponse, error) {
 	var response GetOrderPaymentsResponse
 	err := t.post(ctx, "/order/payments", payload, &response)
+	return response, err
+}
+
+// ChargeOrder charges an order; inspect IsSuccess, since the request can succeed while the charge fails.
+func (t *API) ChargeOrder(ctx context.Context, payload OrderChargeRequest) (OrderChargeResponse, error) {
+	var response OrderChargeResponse
+	err := t.post(ctx, "/order/charge", payload, &response)
 	return response, err
 }
 
@@ -313,41 +338,50 @@ func (t *API) RefundOrder(ctx context.Context, payload RefundOrder) (RefundCance
 	return response, err
 }
 
+// RefundAllOrder refunds the full paid amount of an order.
 func (t *API) RefundAllOrder(ctx context.Context, referenceID string) (RefundCancelOrderResponse, error) {
-	payload := RefundOrder{
-		ReferenceID: referenceID,
-	}
-	return t.RefundOrder(ctx, payload)
+	var response RefundCancelOrderResponse
+	err := t.post(ctx, "/order/refund-all", map[string]string{
+		"reference_id": referenceID,
+	}, &response)
+	return response, err
 }
 
 // Payment Terms methods
+
+// GetOrderTerm returns a payment term by its term reference ID.
 func (t *API) GetOrderTerm(ctx context.Context, termReferenceID string) (map[string]any, error) {
 	var response map[string]any
-	err := t.get(ctx, "/order/term/"+termReferenceID, &response)
+	query := url.Values{"term_reference_id": {termReferenceID}}
+	err := t.get(ctx, "/order/term?"+query.Encode(), &response)
 	return response, err
 }
 
+// CreateOrderTerm adds a payment term to an existing order.
 func (t *API) CreateOrderTerm(ctx context.Context, term OrderPaymentTermCreateDTO) (map[string]any, error) {
 	var response map[string]any
-	err := t.post(ctx, "/order/term/create", term, &response)
+	err := t.post(ctx, "/order/term", term, &response)
 	return response, err
 }
 
+// DeleteOrderTerm removes a payment term; orderID is the order's ID, not its reference ID.
 func (t *API) DeleteOrderTerm(ctx context.Context, orderID, termReferenceID string) (map[string]any, error) {
 	var response map[string]any
-	err := t.post(ctx, "/order/term/delete", map[string]string{
+	err := t.deleteWithBody(ctx, "/order/term", map[string]string{
 		"order_id":          orderID,
 		"term_reference_id": termReferenceID,
 	}, &response)
 	return response, err
 }
 
+// UpdateOrderTerm replaces a payment term with the supplied values.
 func (t *API) UpdateOrderTerm(ctx context.Context, term OrderPaymentTermUpdateDTO) (map[string]any, error) {
 	var response map[string]any
-	err := t.post(ctx, "/order/term/update", term, &response)
+	err := t.patch(ctx, "/order/term", term, &response)
 	return response, err
 }
 
+// RefundOrderTerm refunds a payment made against a payment term.
 func (t *API) RefundOrderTerm(ctx context.Context, term OrderTermRefundRequest) (map[string]any, error) {
 	var response map[string]any
 	err := t.post(ctx, "/order/term/refund", term, &response)
@@ -362,6 +396,7 @@ func (t *API) OrderTerminate(ctx context.Context, referenceID string) (map[strin
 	return response, err
 }
 
+// OrderManualCallback asks the server to resend the order's callback.
 func (t *API) OrderManualCallback(ctx context.Context, referenceID, conversationID string) (map[string]any, error) {
 	var response map[string]any
 	payload := map[string]string{
@@ -370,13 +405,14 @@ func (t *API) OrderManualCallback(ctx context.Context, referenceID, conversation
 	if conversationID != "" {
 		payload["conversation_id"] = conversationID
 	}
-	err := t.post(ctx, "/order/manual-callback", payload, &response)
+	err := t.post(ctx, "/order/callback", payload, &response)
 	return response, err
 }
 
+// OrderRelatedUpdate links an order to a related reference ID.
 func (t *API) OrderRelatedUpdate(ctx context.Context, referenceID, relatedReferenceID string) (map[string]any, error) {
 	var response map[string]any
-	err := t.post(ctx, "/order/related-update", map[string]string{
+	err := t.patch(ctx, "/order/releated", map[string]string{
 		"reference_id":         referenceID,
 		"related_reference_id": relatedReferenceID,
 	}, &response)
@@ -428,26 +464,17 @@ func (t *API) CreateOrganizationUserToken(ctx context.Context, payload OrgUserTo
 	return response, err
 }
 
+// CreateSubmerchant creates a submerchant. CurrencyID accepts a currency UUID or an organization currency unit such as "TRY".
 func (t *API) CreateSubmerchant(ctx context.Context, payload SubmerchantCreateRequest) (SubmerchantMutationResponse, error) {
 	var response SubmerchantMutationResponse
-	currencyID, err := t.normalizeCurrencyID(ctx, payload.CurrencyID)
-	if err != nil {
-		return response, err
-	}
-	payload.CurrencyID = currencyID
-	err = t.post(ctx, "/submerchants", payload, &response)
+	err := t.post(ctx, "/submerchants", payload, &response)
 	return response, err
 }
 
 // CreateMarketplaceSubmerchant creates a logical seller; callers must inspect Provisionings for each VPOS account's readiness.
 func (t *API) CreateMarketplaceSubmerchant(ctx context.Context, payload MarketplaceSubmerchantCreateRequest) (MarketplaceSubmerchantCreateResponse, error) {
 	var response MarketplaceSubmerchantCreateResponse
-	currencyID, err := t.normalizeCurrencyID(ctx, payload.CurrencyID)
-	if err != nil {
-		return response, err
-	}
-	payload.CurrencyID = currencyID
-	err = t.postVersion(ctx, "v2", "/submerchants", payload, &response)
+	err := t.postVersion(ctx, "v2", "/submerchants", payload, &response)
 	return response, err
 }
 
@@ -460,7 +487,7 @@ func (t *API) RecordSubmerchantPayoutEvent(ctx context.Context, payload Submerch
 
 func (t *API) GetSubmerchant(ctx context.Context, id string) (Submerchant, error) {
 	var response Submerchant
-	err := t.get(ctx, "/submerchants/"+id, &response)
+	err := t.get(ctx, "/submerchants/"+url.PathEscape(id), &response)
 	return response, err
 }
 
@@ -473,18 +500,13 @@ func (t *API) ListSubmerchants(ctx context.Context, page, perPage int) (Submerch
 
 func (t *API) UpdateSubmerchant(ctx context.Context, id string, payload SubmerchantUpdateRequest) (SubmerchantMutationResponse, error) {
 	var response SubmerchantMutationResponse
-	currencyID, err := t.normalizeCurrencyID(ctx, payload.CurrencyID)
-	if err != nil {
-		return response, err
-	}
-	payload.CurrencyID = currencyID
-	err = t.patch(ctx, "/submerchants/"+id, payload, &response)
+	err := t.patch(ctx, "/submerchants/"+url.PathEscape(id), payload, &response)
 	return response, err
 }
 
 func (t *API) DeleteSubmerchant(ctx context.Context, id string) (SubmerchantMutationResponse, error) {
 	var response SubmerchantMutationResponse
-	err := t.delete(ctx, "/submerchants/"+id, &response)
+	err := t.delete(ctx, "/submerchants/"+url.PathEscape(id), &response)
 	return response, err
 }
 
@@ -495,15 +517,17 @@ func (t *API) GetSuborganizations(ctx context.Context, page, perPage int) (Subor
 	return response, err
 }
 
+// GetSuborganization returns a suborganization's ID and name.
+// Deprecated: use GetSuborganizationDetail, which decodes every field the endpoint returns.
 func (t *API) GetSuborganization(ctx context.Context, id string) (SuborganizationListItem, error) {
 	var response SuborganizationListItem
-	err := t.get(ctx, "/organization/suborganizations/"+id, &response)
+	err := t.get(ctx, "/organization/suborganizations/"+url.PathEscape(id), &response)
 	return response, err
 }
 
 func (t *API) GetSuborganizationDetail(ctx context.Context, id string) (SuborganizationDetail, error) {
 	var response SuborganizationDetail
-	err := t.get(ctx, "/organization/suborganizations/"+id, &response)
+	err := t.get(ctx, "/organization/suborganizations/"+url.PathEscape(id), &response)
 	return response, err
 }
 
@@ -524,37 +548,29 @@ func (t *API) ListVposWithFilter(ctx context.Context, page, perPage int, filter 
 	return response, err
 }
 
+// CreateVpos creates a VPOS. Currencies accepts currency UUIDs or organization currency units such as "TRY".
 func (t *API) CreateVpos(ctx context.Context, payload VposCreateRequest) (VposMutationResponse, error) {
 	var response VposMutationResponse
-	currencies, err := t.normalizeCurrencyIDs(ctx, payload.Currencies)
-	if err != nil {
-		return response, err
-	}
-	payload.Currencies = currencies
-	err = t.post(ctx, "/vpos", payload, &response)
+	err := t.post(ctx, "/vpos", payload, &response)
 	return response, err
 }
 
 func (t *API) GetVpos(ctx context.Context, id string) (Vpos, error) {
 	var response Vpos
-	err := t.get(ctx, "/vpos/"+id, &response)
+	err := t.get(ctx, "/vpos/"+url.PathEscape(id), &response)
 	return response, err
 }
 
+// UpdateVpos replaces a VPOS configuration; see VposUpdateRequest.
 func (t *API) UpdateVpos(ctx context.Context, id string, payload VposUpdateRequest) (VposMutationResponse, error) {
 	var response VposMutationResponse
-	currencies, err := t.normalizeCurrencyIDs(ctx, payload.Currencies)
-	if err != nil {
-		return response, err
-	}
-	payload.Currencies = currencies
-	err = t.patch(ctx, "/vpos/"+id, payload, &response)
+	err := t.patch(ctx, "/vpos/"+url.PathEscape(id), payload, &response)
 	return response, err
 }
 
 func (t *API) DeleteVpos(ctx context.Context, id string) (VposMutationResponse, error) {
 	var response VposMutationResponse
-	err := t.delete(ctx, "/vpos/"+id, &response)
+	err := t.delete(ctx, "/vpos/"+url.PathEscape(id), &response)
 	return response, err
 }
 
@@ -578,14 +594,14 @@ func (t *API) ListVposAcquirerTemplates(ctx context.Context) (VposAcquirerTempla
 
 func (t *API) ListVposSubmerchants(ctx context.Context, page, perPage int, vposID, externalReferenceID string) (VposSubmerchantListResponse, error) {
 	var response VposSubmerchantListResponse
-	path := fmt.Sprintf("/vpos-submerchant?page=%d&per_page=%d", page, perPage)
+	query := url.Values{"page": {strconv.Itoa(page)}, "per_page": {strconv.Itoa(perPage)}}
 	if vposID != "" {
-		path += "&vpos_id=" + vposID
+		query.Set("vpos_id", vposID)
 	}
 	if externalReferenceID != "" {
-		path += "&external_reference_id=" + externalReferenceID
+		query.Set("external_reference_id", externalReferenceID)
 	}
-	err := t.get(ctx, path, &response)
+	err := t.get(ctx, "/vpos-submerchant?"+query.Encode(), &response)
 	return response, err
 }
 
@@ -597,31 +613,31 @@ func (t *API) CreateVposSubmerchant(ctx context.Context, payload VposSubmerchant
 
 func (t *API) GetVposSubmerchant(ctx context.Context, id string) (VposSubmerchant, error) {
 	var response VposSubmerchant
-	err := t.get(ctx, "/vpos-submerchant/"+id, &response)
+	err := t.get(ctx, "/vpos-submerchant/"+url.PathEscape(id), &response)
 	return response, err
 }
 
 func (t *API) UpdateVposSubmerchant(ctx context.Context, id string, payload VposSubmerchantUpdateRequest) (VposSubmerchantMutationResponse, error) {
 	var response VposSubmerchantMutationResponse
-	err := t.patch(ctx, "/vpos-submerchant/"+id, payload, &response)
+	err := t.patch(ctx, "/vpos-submerchant/"+url.PathEscape(id), payload, &response)
 	return response, err
 }
 
 func (t *API) DeleteVposSubmerchant(ctx context.Context, id string) (VposSubmerchantMutationResponse, error) {
 	var response VposSubmerchantMutationResponse
-	err := t.delete(ctx, "/vpos-submerchant/"+id, &response)
+	err := t.delete(ctx, "/vpos-submerchant/"+url.PathEscape(id), &response)
 	return response, err
 }
 
 func (t *API) GetSuborganizationBySubmerchant(ctx context.Context, submerchantID string) (SubmerchantSuborganizationMapping, error) {
 	var response SubmerchantSuborganizationMapping
-	err := t.get(ctx, "/submerchants/"+submerchantID+"/suborganization", &response)
+	err := t.get(ctx, "/submerchants/"+url.PathEscape(submerchantID)+"/suborganization", &response)
 	return response, err
 }
 
 func (t *API) GetSubmerchantBySuborganization(ctx context.Context, suborganizationID string) (SuborganizationSubmerchantMapping, error) {
 	var response SuborganizationSubmerchantMapping
-	err := t.get(ctx, "/organization/suborganizations/"+suborganizationID+"/submerchant", &response)
+	err := t.get(ctx, "/organization/suborganizations/"+url.PathEscape(suborganizationID)+"/submerchant", &response)
 	return response, err
 }
 
@@ -676,6 +692,6 @@ func (t *API) ListSavedCards(ctx context.Context, page, perPage int) (ListSavedC
 // DeleteSavedCard deletes a saved (tokenized) card by its id.
 func (t *API) DeleteSavedCard(ctx context.Context, id string) (DeleteSavedCardResponse, error) {
 	var response DeleteSavedCardResponse
-	err := t.delete(ctx, "/tokenization/card/"+id, &response)
+	err := t.delete(ctx, "/tokenization/card/"+url.PathEscape(id), &response)
 	return response, err
 }

@@ -310,7 +310,7 @@ if err != nil {
 _ = accepted // "accepted" acknowledges local approval; poll GetMarketplacePayout for settlement.
 ```
 
-Approval supports up to 100 payout IDs. All release gates are checked again by Admin. A repeated approval of an already released payout is rejected rather than creating another payout. Policy changes and eligibility overrides remain Admin-only.
+Approval supports up to 100 payout IDs. All release gates are checked again by Admin. A repeated approval of an already released payout is rejected rather than creating another payout. Eligibility overrides remain Admin-only.
 
 The legacy `ApproveSubmerchantPayment` endpoint now resolves an existing organization-scoped payout from the provider transaction reference and enters the same approval workflow. Unknown or ambiguous references are rejected. Prefer payout IDs, especially when an organization has multiple accounts. Legacy profile updates enforce marketplace immutable-field checks, but cannot express the caller's revision or review outcome; prefer `UpdateMarketplaceSubmerchant`.
 
@@ -377,7 +377,7 @@ sequence := 1
 
 paymentTerm := tapsilat.OrderPaymentTerm{
     Amount:          &amount1,
-    DueDate:         "2024-01-15",
+    DueDate:         "2024-01-15T00:00:00Z", // RFC3339; required on every term
     Required:        &required,
     TermSequence:    &sequence,
     Status:          "pending",
@@ -394,6 +394,47 @@ order := tapsilat.Order{
         Surname: "Doe",
         Email:   "john@doe.com",
     },
+}
+```
+
+Payment terms on an existing order use their own endpoints. `OrderID` is the order's ID (`OrderResponse.OrderID`), not its reference ID, and term dates use `YYYY-MM-DD`:
+
+```go
+sequence := 2
+_, err := api.CreateOrderTerm(ctx, tapsilat.OrderPaymentTermCreateDTO{
+    OrderID:      orderResponse.OrderID,
+    TermSequence: &sequence,
+    Required:     true,
+    Amount:       25,
+    DueDate:      "2026-02-15",
+})
+
+// Refunds need the order reference and the term's ID (OrderPaymentTermDTO.ID).
+_, err = api.RefundOrderTerm(ctx, tapsilat.OrderTermRefundRequest{
+    ReferenceID: orderResponse.ReferenceID,
+    TermID:      term.ID,
+    Amount:      10,
+})
+```
+
+`UpdateOrderTerm` replaces the term, so send every field rather than only the changed ones.
+
+### Card Installments and Charging
+
+```go
+options, err := api.GetCardInstallments(ctx, tapsilat.CardInstallmentsRequest{
+    Bin:      "54066200",
+    Amount:   100,
+    Currency: "TRY",
+})
+// options.Installments lists each installment count with its commission rate and monthly payment.
+
+table, err := api.GetInstallmentTable(ctx, tapsilat.InstallmentTableRequest{Amount: 100, Currency: "TRY"})
+// table.Groups lists installment rows per bank card program.
+
+charge, err := api.ChargeOrder(ctx, tapsilat.OrderChargeRequest{OrderReferenceID: referenceID})
+if err == nil && !charge.IsSuccess {
+    // The request succeeded but the charge did not; inspect charge.ErrorCode and charge.Message.
 }
 ```
 
@@ -752,7 +793,8 @@ All API methods now require a `context.Context` as the first parameter for bette
 - `GetOrderStatus(ctx context.Context, referenceID string) (OrderStatus, error)`
 - `GetOrders(ctx context.Context, page, perPage, buyerID string) (PaginatedData, error)`
 - `GetOrderList(ctx context.Context, page, perPage int, startDate, endDate, organizationID, relatedReferenceID string) (PaginatedData, error)`
-- `GetOrderSubmerchants(ctx context.Context, page, perPage int) (PaginatedData, error)`
+- `GetOrderListWithFilter(ctx context.Context, filter OrderListFilter) (PaginatedData, error)`
+- `GetOrderSubmerchants(ctx context.Context, page, perPage int) (OrderSubmerchantListResponse, error)`
 - `GetCheckoutURL(ctx context.Context, referenceID string) (string, error)`
 
 ### Payment Operations
@@ -761,6 +803,9 @@ All API methods now require a `context.Context` as the first parameter for bette
 - `RefundAllOrder(ctx context.Context, referenceID string) (RefundCancelOrderResponse, error)`
 - `CancelOrder(ctx context.Context, cancel CancelOrder) (RefundCancelOrderResponse, error)`
 - `GetOrderPayments(ctx context.Context, payload GetOrderPaymentsRequest) (GetOrderPaymentsResponse, error)`
+- `ChargeOrder(ctx context.Context, payload OrderChargeRequest) (OrderChargeResponse, error)`
+- `GetCardInstallments(ctx context.Context, req CardInstallmentsRequest) (CardInstallmentsResponse, error)`
+- `GetInstallmentTable(ctx context.Context, req InstallmentTableRequest) (InstallmentTableResponse, error)`
 - `ApproveSubmerchantPayment(ctx context.Context, payload SubmerchantPaymentAction) (SubmerchantPaymentActionResponse, error)`
 - `DisapproveSubmerchantPayment(ctx context.Context, payload SubmerchantPaymentAction) (SubmerchantPaymentActionResponse, error)`
 - `UpdateSubmerchantPaymentItem(ctx context.Context, payload SubmerchantPaymentItemUpdate) (SubmerchantPaymentItemUpdateResponse, error)`
@@ -783,8 +828,9 @@ All API methods now require a `context.Context` as the first parameter for bette
 
 ### Utility Operations
 
-- `GetOrderTransactions(ctx context.Context, referenceID string) (map[string]any, error)`
+- `GetOrderTransactions(ctx context.Context, referenceID string) ([]map[string]any, error)`
 - `GetOrderPaymentDetails(ctx context.Context, referenceID string) (map[string]any, error)`
+- `GetOrderPaymentDetailsByConversationID(ctx context.Context, conversationID string) (map[string]any, error)`
 - `OrderTerminate(ctx context.Context, referenceID string) (map[string]any, error)`
 - `OrderManualCallback(ctx context.Context, referenceID, conversationID string) (map[string]any, error)`
 - `OrderRelatedUpdate(ctx context.Context, referenceID, relatedReferenceID string) (map[string]any, error)`
@@ -821,7 +867,11 @@ All API methods now require a `context.Context` as the first parameter for bette
 - `UpdateVposSubmerchant(ctx context.Context, id string, payload VposSubmerchantUpdateRequest) (VposSubmerchantMutationResponse, error)`
 - `DeleteVposSubmerchant(ctx context.Context, id string) (VposSubmerchantMutationResponse, error)`
 
-`SubmerchantCreateRequest.CurrencyID`, `SubmerchantUpdateRequest.CurrencyID`, `VposCreateRequest.Currencies`, and `VposUpdateRequest.Currencies` accept either canonical currency UUIDs or organization `currency_unit` values such as `TRY`/`USD`. The SDK resolves non-UUID refs to UUIDs before sending requests.
+Currency fields on submerchants (v1 and marketplace), VPOS `Currencies` and seller contracts accept either currency UUIDs or organization `currency_unit` values such as `TRY`/`USD`; the server resolves units, so the SDK sends them unchanged. Marketplace approval policies are the exception: their `CurrencyID` must be a UUID on the wire, so `CreateMarketplaceApprovalPolicy` and `UpdateMarketplaceApprovalPolicy` resolve a unit first. `ResolveCurrencyID` exposes the same lookup.
+
+`UpdateVpos` and `UpdateSubmerchant` replace the stored configuration. Read the current record first and send every field back; for example, omitting `Failover` or `TLS` stores `false`.
+
+`OrderCheckoutDesign.OrderDetailHtml` and `RedirectUrl` are deprecated and ignored by checkout. Use `Order.RedirectSuccessUrl` and `Order.RedirectFailureUrl` for redirects.
 
 ## Testing
 
@@ -953,7 +1003,10 @@ if err != nil {
 - `Status`: API status field if present, otherwise HTTP status text
 - `Code`: API error code if present
 - `Message`: API `message` or `error` field if present
+- `Errors`: per-field validation messages, when the server returns an `errors` object
 - `RawBody`: original response body for fallback debugging
+
+Most "not found" errors arrive as HTTP 400, and rejected state transitions (for example approving an ineligible payout) as HTTP 424. A successful status with an HTML body, which a deployment serving the panel UI returns for unknown routes, is reported as an `APIError` whose `Message` says the response was not JSON.
 
 ## Contributing
 
