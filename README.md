@@ -806,6 +806,70 @@ func main() {
 }
 ```
 
+### Webhook Handling
+
+#### Verify Webhook Signature
+
+Tapsilat signs every callback it sends to your callback URLs, and to an order's `payment_success_url` and `payment_failure_url`, with the webhook secret from the panel's callback settings. The `Tapsilat-Signature` header looks like `t=1726480000,v1=5257a8…`: `v1` is the hex HMAC-SHA256 of the timestamp, a dot and the raw body.
+
+`VerifyWebhook` checks it in constant time and rejects a timestamp more than 5 minutes from the server clock, so a captured callback cannot be replayed. Pass the raw body, not re-encoded JSON.
+
+```go
+package main
+
+import (
+	"io"
+	"log"
+	"net/http"
+
+	"github.com/tapsilat/tapsilat-go"
+)
+
+func main() {
+	secret := "your_webhook_secret"
+
+	http.HandleFunc("/tapsilat/callback", func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil || !tapsilat.VerifyWebhook(body, r.Header.Get(tapsilat.WebhookSignatureHeader), secret) {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		event, err := tapsilat.ParseWebhookEvent(body)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		// event.Type is "order_lite" (the default), "order", "order_payment_detail", ...
+		// ReferenceID reads the order's reference ID whatever the callback type; Status is
+		// e.g. "Paid" when the callback type carries a status.
+		log.Printf("%s callback for order %s (conversation %s): %s",
+			event.Type, event.ReferenceID(), event.ConversationID(), event.Status())
+
+		if event.IsPaid() {
+			// fulfil the order
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	_ = http.ListenAndServe(":8080", nil)
+}
+```
+
+`VerifyWebhookAt(payload, signature, secret, tolerance, now)` takes a different tolerance (`0` disables the timestamp check) and the time to compare with. A bare hex HMAC of the body, with or without a `sha256=` prefix, is still accepted.
+
+#### Order Statuses
+
+The `OrderStatus*` constants are the numeric status codes that callbacks carry, and `OrderStatusName` returns the names `GetOrderStatus` returns. The helpers accept a code, a numeric string or a name (case-insensitive):
+
+```go
+status, err := api.GetOrderStatus(context.Background(), referenceID) // status.Status is e.g. "Waiting for payment"
+
+tapsilat.IsPaidOrderStatus(status.Status)     // Paid, Completed, Sub merchant payment approved
+tapsilat.IsFailedOrderStatus(status.Status)   // Cancelled, Fraud, Rejected, Failure, Expired, Terminated
+tapsilat.IsRefundedOrderStatus(status.Status) // Refunded, Partially refunded
+tapsilat.OrderStatusCode(status.Status)       // 7; also accepts "7" or 7
+```
+
 ## API Methods
 
 All API methods now require a `context.Context` as the first parameter for better control over request cancellation and timeouts.
@@ -873,6 +937,15 @@ These call the panel's `/loan/car/*` routes. The panel runs them on the mono-loa
 - `GetOrganizationSettings(ctx context.Context) (OrganizationSettings, error)`
 - `CreateOrganizationUser(ctx context.Context, payload OrgCreateUserRequest) (OrgCreateUserResponse, error)`
 - `CreateOrganizationUserToken(ctx context.Context, payload OrgUserTokenCreateRequest) (OrgUserTokenCreateResponse, error)`
+
+### Webhook Helpers
+
+- `VerifyWebhook(payload []byte, signature, secret string) bool`
+- `VerifyWebhookAt(payload []byte, signature, secret string, tolerance time.Duration, now time.Time) bool`
+- `ParseWebhookEvent(payload []byte) (WebhookEvent, error)` and `NewWebhookEvent(payload map[string]any) WebhookEvent`
+- `WebhookEvent.ReferenceID()`, `ConversationID()`, `StatusCode()`, `Status()`, `IsPaid()`, `IsFailed()`, `IsRefunded()`
+- `OrderStatusCode(status any) int`, `OrderStatusName(code int) string`
+- `IsPaidOrderStatus`, `IsFailedOrderStatus`, `IsRefundedOrderStatus` with `PaidOrderStatuses`, `FailedOrderStatuses`, `RefundedOrderStatuses`
 
 ### Management Operations
 
@@ -989,6 +1062,7 @@ tapsilat-go/
 ├── tapsilat.go          # Main API client
 ├── dtos.go              # Data transfer objects
 ├── validators.go        # Input validation functions
+├── webhook.go           # Callback signature verification and parsing
 ├── tests/
 │   ├── unit/            # Unit tests
 │   │   ├── validators_test.go

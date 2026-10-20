@@ -1,6 +1,7 @@
 package tapsilat
 
 import (
+	"strings"
 	"time"
 )
 
@@ -78,19 +79,19 @@ var OrderStatuesMap = []struct {
 	{20, "Still has unpaid terms"},
 	{21, "Expired"},
 	{22, "Still has unpaid sub merchant payments"},
-	{23, "Partially paid"},
+	{23, "Partially Paid"},
 	{24, "Terminated"},
-	{25, "Card tokenization"},
-	{26, "Pre authorized"},
+	{25, "Card Tokenization"},
+	{26, "Pre Authorized"},
 	{27, "Disputed"},
 	{28, "Partially disputed"},
 	{29, "Suspect"},
 }
 
-// GetOrderStatusByStr returns the order status id by string
+// GetOrderStatusByStr returns the order status id for a status name, ignoring case, or 0
 func GetOrderStatusByStr(status string) int {
 	for _, v := range OrderStatuesMap {
-		if v.Status == status {
+		if strings.EqualFold(v.Status, status) {
 			return v.Id
 		}
 	}
