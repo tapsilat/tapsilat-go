@@ -888,6 +888,8 @@ All API methods now require a `context.Context` as the first parameter for bette
 
 ### Payment Operations
 
+- `AddOrderOIP(ctx context.Context, payload OrderOIPRequest) (map[string]any, error)`: records a payment taken outside the checkout (for example cash or a bank transfer) on a basket item via `POST /order/oip`. `payload.OrderID` is the order's internal ID (see `GetOrderID`), `Type` one of the `OrderItemPaymentType*` constants. The organization needs the `ADD_OIP` feature and the token `order:update`.
+- `GetOrderID(ctx context.Context, referenceID string) (string, error)`: resolves an order's internal ID from its reference ID (order detail, then the order list filtered by conversation ID).
 - `RefundOrder(ctx context.Context, refund RefundOrder) (RefundCancelOrderResponse, error)`
 - `RefundAllOrder(ctx context.Context, referenceID string) (RefundCancelOrderResponse, error)`
 - `CancelOrder(ctx context.Context, cancel CancelOrder) (RefundCancelOrderResponse, error)`
