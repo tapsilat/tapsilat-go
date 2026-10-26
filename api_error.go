@@ -13,8 +13,10 @@ type APIError struct {
 	Code       string
 	Message    string
 	// Errors holds per-field validation messages when the server returns them.
-	Errors  map[string]any
-	RawBody string
+	Errors map[string]any
+	// Retryable is set when the error object says the request can be retried, as Elements errors do.
+	Retryable bool
+	RawBody   string
 }
 
 func (e *APIError) Error() string {
@@ -55,6 +57,15 @@ func newAPIError(statusCode int, status string, body []byte) *APIError {
 	}
 	if value, ok := payload["message"]; ok {
 		err.Message = fmt.Sprint(value)
+	} else if nested, ok := payload["error"].(map[string]any); ok {
+		// Elements routes nest the error: {"error": {"code", "message", "retryable"}}.
+		if value, ok := nested["code"]; ok && err.Code == "" {
+			err.Code = fmt.Sprint(value)
+		}
+		if value, ok := nested["message"]; ok {
+			err.Message = fmt.Sprint(value)
+		}
+		err.Retryable, _ = nested["retryable"].(bool)
 	} else if value, ok := payload["error"]; ok {
 		err.Message = fmt.Sprint(value)
 	}
