@@ -14,7 +14,7 @@ import (
 	tapsilat "github.com/tapsilat/tapsilat-go"
 )
 
-// An order_lite callback signed the way admin's monosign.SignWebhook signs it; the expected
+// An order_lite callback and a known-good Tapsilat-Signature for this body and secret; the expected
 // signature was computed with openssl, independently of the SDK.
 const (
 	webhookPayload = `{"data":{"id":"5f0c6f1e-1111-4a5b-9c1d-2e3f4a5b6c7d",` +

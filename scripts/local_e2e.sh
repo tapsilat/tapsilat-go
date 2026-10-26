@@ -19,10 +19,9 @@ usage() {
 Run local end-to-end validation for tapsilat-go (submerchant/vpos scope).
 
 Usage:
-  scripts/local_e2e.sh [--start-stack] [--smoke-only] [--integration-only] [--bootstrap-submerchant] [--bootstrap-vpos]
+  scripts/local_e2e.sh [--smoke-only] [--integration-only] [--bootstrap-submerchant] [--bootstrap-vpos]
 
 Modes:
-  --start-stack       Runs `make compose` in panel/backend before tests.
   --smoke-only        Runs only smoke tests.
   --integration-only  Runs only integration tests.
   --bootstrap-submerchant
@@ -30,14 +29,12 @@ Modes:
   --bootstrap-vpos    Creates vpos and vpos-submerchant mapping before tests.
 
 Environment:
-  PANEL_API_BASE_URL            Panel API base URL (default: http://localhost:3001/api/v1)
-  PANEL_BACKEND_DIR             panel/backend path (default: ../panel/backend)
-  START_STACK                   1 to auto run make compose (same as --start-stack)
+  PANEL_API_BASE_URL            Tapsilat API base URL to test against (default: http://localhost:3001/api/v1)
 
   # Auth source (one of these must be provided):
   TAPSILAT_API_TOKEN            Existing API token to use directly
-  TAPSILAT_API_KEY              API key from localhost:8080 UI
-  TAPSILAT_API_SECRET           API secret from localhost:8080 UI
+  TAPSILAT_API_KEY              API key from the merchant panel
+  TAPSILAT_API_SECRET           API secret from the merchant panel
 
   # Optional token generation settings
   TOKEN_NAME                    default: tapsilat-go-local-e2e
@@ -74,7 +71,6 @@ Notes:
 USAGE
 }
 
-START_STACK_FLAG="${START_STACK:-0}"
 RUN_SMOKE=1
 RUN_INTEGRATION=1
 AUTO_BOOTSTRAP="${AUTO_CREATE_SUBMERCHANT:-0}"
@@ -82,10 +78,6 @@ AUTO_BOOTSTRAP_VPOS="${AUTO_CREATE_VPOS:-0}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --start-stack)
-      START_STACK_FLAG=1
-      shift
-      ;;
     --smoke-only)
       RUN_INTEGRATION=0
       shift
@@ -120,16 +112,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 PANEL_API_BASE_URL="${PANEL_API_BASE_URL:-http://localhost:3001/api/v1}"
-PANEL_BACKEND_DIR="${PANEL_BACKEND_DIR:-$REPO_DIR/../panel/backend}"
 TOKEN_NAME="${TOKEN_NAME:-tapsilat-go-local-e2e}"
 TOKEN_EXPIRE_DAYS="${TOKEN_EXPIRE_DAYS:-1}"
-
-if [[ "$START_STACK_FLAG" == "1" ]]; then
-  [[ -d "$PANEL_BACKEND_DIR" ]] || fail "PANEL_BACKEND_DIR not found: $PANEL_BACKEND_DIR"
-  require_cmd make
-  log "Starting local stack via make compose in $PANEL_BACKEND_DIR"
-  (cd "$PANEL_BACKEND_DIR" && make compose)
-fi
 
 resolve_token() {
   if [[ -n "${TAPSILAT_API_TOKEN:-}" ]]; then

@@ -41,7 +41,7 @@ func TestCarLoanCheckLimit(t *testing.T) {
 	server, call := carLoanServer(t, http.StatusOK, `{
 		"response_code": "00",
 		"response_message": "OK",
-		"organization_id": "mono-org",
+		"organization_id": "org-1",
 		"reference_id": "ref-1",
 		"trace_id": "",
 		"vehicle_value": 750000,
