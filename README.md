@@ -618,6 +618,32 @@ plan, err := api.CarLoanPaymentPlan(ctx, tapsilat.CarLoanPaymentPlanRequest{
 })
 ```
 
+### Tapsilat Elements Sessions
+
+Tapsilat Elements is the native Android and iOS card sheet. Your backend creates a session with its secret key and passes only the session's `client_secret` to the app, which opens the sheet with it. Card data goes from the sheet to Tapsilat encrypted and never reaches your backend.
+
+```go
+session, err := api.CreateElementsSession(ctx, tapsilat.ElementsSessionCreateRequest{
+	Purpose:          tapsilat.ElementsPurposePay,
+	OrderReferenceID: order.ReferenceID,
+	SaveCard:         true,
+})
+if err != nil {
+	return err
+}
+// Return session.ID and session.ClientSecret to your app. Do not log or store the secret.
+
+// Later, read the outcome on your backend instead of trusting the app:
+outcome, err := api.GetElementsSession(ctx, session.ID)
+if err == nil && outcome.Status == tapsilat.ElementsStatusSucceeded {
+	// fulfil the order; outcome.Card holds brand, last4 and expiry
+}
+```
+
+A `pay` session needs `OrderReferenceID`. A `tokenize` session saves a card for `UserID`, with `Mode` set to `ElementsModeSecure` (3D Secure), `ElementsModeHalfSecure` or `ElementsModeNonSecure`. `CancelElementsSession(ctx, id)` cancels a session that is still waiting for a card; a session that is confirming or has completed comes back unchanged.
+
+The client secret is returned only by `CreateElementsSession`. `ElementsSessionWithSecret` prints it as `[redacted]` with `fmt`, and JSON encoding keeps it, so you can still send it to the app. Elements errors carry a stable `Code` (for example `elements_not_enabled`, `session_not_found`) and `Retryable` on `APIError`.
+
 ### Subscription Operations
 
 #### Create Subscription
@@ -927,6 +953,12 @@ All API methods now require a `context.Context` as the first parameter for bette
 
 These call the panel's `/loan/car/*` routes. The panel runs them on the mono-loan instance the token's organization is set up with (its Mono / Car Loan provider in admin), so quote, payment plan and application always reach the same instance. The organization comes from the token; it is never sent in the request.
 
+### Elements Operations
+
+- `CreateElementsSession(ctx context.Context, payload ElementsSessionCreateRequest) (ElementsSessionWithSecret, error)`: `POST /elements/sessions`
+- `GetElementsSession(ctx context.Context, id string) (ElementsSession, error)`: `GET /elements/sessions/{id}`
+- `CancelElementsSession(ctx context.Context, id string) (ElementsSession, error)`: `POST /elements/sessions/{id}/cancel`
+
 ### Utility Operations
 
 - `GetOrderTransactions(ctx context.Context, referenceID string) ([]map[string]any, error)`
@@ -1115,7 +1147,10 @@ if err != nil {
 - `Code`: API error code if present
 - `Message`: API `message` or `error` field if present
 - `Errors`: per-field validation messages, when the server returns an `errors` object
+- `Retryable`: true when the error object says the request can be retried
 - `RawBody`: original response body for fallback debugging
+
+Elements routes nest the error as `{"error": {"code": "...", "message": "...", "retryable": true}}`; `Code`, `Message` and `Retryable` are read from that object.
 
 Most "not found" errors arrive as HTTP 400, and rejected state transitions (for example approving an ineligible payout) as HTTP 424. A successful status with an HTML body, which a deployment serving the panel UI returns for unknown routes, is reported as an `APIError` whose `Message` says the response was not JSON.
 
