@@ -26,17 +26,11 @@ func main() {
 }
 ```
 
-## Local End-to-End Validation (Panel + SDK)
+## Local End-to-End Validation
 
-Use this flow to validate newly added submerchant/vpos-related SDK APIs against local `panel/backend`.
+Use this flow to validate the submerchant and VPOS methods against a running Tapsilat API. The script calls `PANEL_API_BASE_URL` (default `http://localhost:3001/api/v1`); set it to the environment you test against.
 
-- Start local stack from `panel/backend`:
-
-```bash
-make compose
-```
-
-- Open `http://localhost:8080`, login, and generate API key/secret.
+- Sign in to the merchant panel of that environment and create an API key and secret.
 
 - In `tapsilat-go`, run local E2E script:
 
@@ -52,7 +46,6 @@ scripts/local_e2e.sh
 Optional:
 
 - Reuse an existing token: set `TAPSILAT_API_TOKEN`.
-- Start stack from script: `scripts/local_e2e.sh --start-stack`.
 - Run only smoke: `scripts/local_e2e.sh --smoke-only`.
 - Run only integration: `scripts/local_e2e.sh --integration-only`.
 - Auto-create submerchant + resolve suborganization IDs before tests:
@@ -77,7 +70,7 @@ This writes IDs to `/tmp/tapsilat_local_e2e_ids.env` (override with `BOOTSTRAP_O
 - `BOOTSTRAP_CREATED_VPOS_ID` / `BOOTSTRAP_CREATED_VPOS_SUBMERCHANT_ID`: raw VPOS and mapping IDs created during VPOS bootstrap.
 - `TAPSILAT_SMOKE_*` and `TAPSILAT_IT_*`: effective IDs used for tests.
 
-If reverse mapping is not yet consistent in backend, script continues with submerchant-only smoke assertions and leaves integration IDs empty instead of failing immediately.
+If `GET /organization/suborganizations/{id}/submerchant` does not yet return the new submerchant, the script continues with submerchant-only smoke assertions and leaves integration IDs empty instead of failing immediately.
 
 Notes:
 
@@ -86,7 +79,7 @@ Notes:
 
 ## Marketplace payout and policy APIs
 
-Marketplace methods use the version 2 Panel routes even when the client endpoint ends in `/api/v1`.
+Marketplace methods call the `/api/v2` routes even when the client endpoint ends in `/api/v1`.
 They include exact seller lookup by `external_id`, payout list/read/bulk approval, organization
 approval settings, and approval/release policy create, update and delete operations. Delete methods
 accept an empty successful response body.
@@ -310,7 +303,7 @@ if err != nil {
 _ = accepted // "accepted" acknowledges local approval; poll GetMarketplacePayout for settlement.
 ```
 
-Approval supports up to 100 payout IDs. All release gates are checked again by Admin. A repeated approval of an already released payout is rejected rather than creating another payout. Eligibility overrides remain Admin-only.
+Approval supports up to 100 payout IDs. Tapsilat checks every release gate again when it processes the approval. A repeated approval of an already released payout is rejected rather than creating another payout. Eligibility cannot be overridden through the API.
 
 The legacy `ApproveSubmerchantPayment` endpoint now resolves an existing organization-scoped payout from the provider transaction reference and enters the same approval workflow. Unknown or ambiguous references are rejected. Prefer payout IDs, especially when an organization has multiple accounts. Legacy profile updates enforce marketplace immutable-field checks, but cannot express the caller's revision or review outcome; prefer `UpdateMarketplaceSubmerchant`.
 
@@ -347,26 +340,11 @@ Both operations preserve the payment-time release policy, dates and required bus
 | iyzico | Update an unapproved paid item; withdraw a provider approval through the disapprove service. Withdraw approval before changing an already approved allocation. |
 | PayTR | Change the local transfer instruction before submission. Seller/beneficiary and refund allocation bookkeeping update in one transaction. Processing, submitted, settled and indeterminate transfers cannot be recalled through these operations. |
 
-The service persists an operation receipt before remote dispatch and sets `ActiveOperationID` and `ReleaseStatus = "processing"`. Workers, approvals and eligibility overrides cannot release that payout during an unresolved operation. Identical idempotent replays never redispatch the mutation. A known provider rejection leaves the original allocation intact and requires manual approval; submit a corrected operation with a new key and fresh payout revision.
+Tapsilat stores an operation receipt before it contacts the provider and sets `ActiveOperationID` and `ReleaseStatus = "processing"`. While the operation is unresolved, no scheduled release, approval or eligibility override can release that payout. Identical idempotent replays never redispatch the mutation. A known provider rejection leaves the original allocation intact and requires manual approval; submit a corrected operation with a new key and fresh payout revision.
 
 Use `GetMarketplacePayoutOperation` to read a receipt. For a timeout or lost response, `ReconcileMarketplacePayoutOperation` queries the provider and completes local bookkeeping only when the requested result is confirmed. `RetryMarketplacePayoutOperation` explicitly retries only after verifying that the provider still has the previous allocation/approval. An operation still within its one-minute in-flight window is not redispatched. Unverifiable results remain held. Changing account configuration during an unresolved operation requires restoring/verifying that account before recovery.
 
 The provider constraints are described in the official [iyzico approval documentation](https://docs.iyzico.com/en/products/marketplace/marketplace-implementation/approval), [iyzico item update documentation](https://docs.iyzico.com/en/products/marketplace/marketplace-implementation/submerchant/alt-uye-sorgulama-1) and [PayTR transfer documentation](https://dev.paytr.com/platform-transfer-talebi/transfer-talimatinin-verilmesi).
-
-### Local marketplace stack verification
-
-The opt-in test starts isolated Admin gRPC and Panel HTTP servers and calls them through this SDK; Monolog persistence is disabled by the test environment:
-
-```sh
-TAPSILAT_STACK_ADMIN_ROOT=/absolute/path/to/admin/backend \
-TAPSILAT_STACK_PANEL_ROOT=/absolute/path/to/panel/backend \
-CONFIG_PATH=/absolute/path/to/local/admin/config.yaml \
-go test -v ./tests/integration -run '^TestMarketplaceAdminPanelSDKStack$' -count=1
-```
-
-Use matching feature-stack revisions in all three repositories. The test uses an in-memory database, a temporary token verifier, and a local gateway contract fixture. It exercises real SDK HTTP, Panel routing, Admin gRPC handlers and domain services. It covers explicit account selection, idempotency, profile revisions, provider contracts/actions, payout materialization for both providers from seeded paid orders, item events, eligibility, approval, policy reads, legacy disapprove/item updates, versioned payout operations and lost-response reconciliation. It does not execute an order-create request, a real JWT login, remote provider registration, a card payment or provider settlement. Sandbox payment verification is a separate test.
-
-Apply the Admin migration for `marketplace_payout_operations` and `marketplace_payouts.active_operation_id`, deploy matching Admin handlers/workers, then Panel, and verify both before publishing a new SDK release. These methods require the matching backend stack; an older published SDK or server does not provide this API parity.
 
 ### Order with Payment Terms (Installments)
 
@@ -951,7 +929,7 @@ All API methods now require a `context.Context` as the first parameter for bette
 - `CarLoanApply(ctx context.Context, payload CarLoanApplyRequest) (CarLoanApplyResponse, error)`
 - `CarLoanStatus(ctx context.Context, payload CarLoanStatusRequest) (CarLoanStatusResponse, error)`
 
-These call the panel's `/loan/car/*` routes. The panel runs them on the mono-loan instance the token's organization is set up with (its Mono / Car Loan provider in admin), so quote, payment plan and application always reach the same instance. The organization comes from the token; it is never sent in the request.
+These call `POST /loan/car/providers`, `/loan/car/limit`, `/loan/car/payment-plan`, `/loan/car/apply` and `/loan/car/status`. Tapsilat answers them from the car loan setup of the token's organization, so quote, payment plan and application always use the same configuration. The organization comes from the token; it is never sent in the request.
 
 ### Elements Operations
 
