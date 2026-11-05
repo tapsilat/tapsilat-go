@@ -88,6 +88,14 @@ Bulk payout approval accepts at most 100 IDs. Callers should approve only payout
 `eligibility_status` is `eligible` and whose `release_status` is `awaiting_approval`; the server
 revalidates both conditions.
 
+## Order status
+
+Use the helpers. Do not compare raw status numbers.
+
+- `IsPaidOrderStatus` is a settled payment: Paid, Completed, or Sub merchant payment approved.
+- `IsDirectCapturedOrderStatus` is a normal VPOS capture: Paid or Completed. Marketplace payout states are not captures on this path.
+- `IsMarketplaceCapturedOrderStatus` is a marketplace capture. It includes the settled statuses, Still has unpaid sub merchant payments, and the later payout outcomes disapproved and errored. The buyer payment is already captured in those states.
+
 ## Context Usage
 
 All API methods require a `context.Context` parameter. This allows you to control request timeouts and cancellation:

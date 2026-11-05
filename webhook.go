@@ -178,9 +178,20 @@ func (e WebhookEvent) Status() string {
 	return OrderStatusName(e.StatusCode())
 }
 
-// IsPaid reports whether the order's payment was captured.
+// IsPaid reports whether the order is paid and has no open marketplace payout.
 func (e WebhookEvent) IsPaid() bool {
 	return IsPaidOrderStatus(e.StatusCode())
+}
+
+// IsDirectCaptured reports whether a normal VPOS buyer payment was captured.
+func (e WebhookEvent) IsDirectCaptured() bool {
+	return IsDirectCapturedOrderStatus(e.StatusCode())
+}
+
+// IsMarketplaceCaptured reports whether a marketplace buyer payment was captured,
+// including an order whose submerchant payouts are still open.
+func (e WebhookEvent) IsMarketplaceCaptured() bool {
+	return IsMarketplaceCapturedOrderStatus(e.StatusCode())
 }
 
 // IsFailed reports whether the order will not be paid.
