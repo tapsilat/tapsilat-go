@@ -7,8 +7,29 @@ import (
 	"strings"
 )
 
-// PaidOrderStatuses are the statuses of an order whose payment was captured.
+// PaidOrderStatuses are the statuses of an order that is paid and has no open
+// marketplace payout. A marketplace card capture whose submerchant payouts are
+// still open is OrderStatusStillHasUnpaidSubMerchantPayments; use
+// IsMarketplaceCapturedOrderStatus for that.
 var PaidOrderStatuses = []int{OrderStatusPaid, OrderStatusCompleted, OrderStatusSubMerchantPaymentApproved}
+
+// DirectCapturedOrderStatuses are the statuses of a normal VPOS order whose
+// buyer payment was captured. Marketplace payout states are not captures on
+// this path.
+var DirectCapturedOrderStatuses = []int{OrderStatusPaid, OrderStatusCompleted}
+
+// MarketplaceCapturedOrderStatuses are the statuses of a marketplace order whose
+// buyer payment was captured. StillHasUnpaidSubMerchantPayments means the card
+// is captured and submerchant payouts are still open. Approved, disapproved and
+// errored are later payout outcomes; the buyer payment stays captured.
+var MarketplaceCapturedOrderStatuses = []int{
+	OrderStatusPaid,
+	OrderStatusCompleted,
+	OrderStatusSubMerchantPaymentApproved,
+	OrderStatusSubMerchantPaymentDisapproved,
+	OrderStatusSubMerchantPaymentErrored,
+	OrderStatusStillHasUnpaidSubMerchantPayments,
+}
 
 // FailedOrderStatuses are the statuses of an order that will not be paid.
 var FailedOrderStatuses = []int{
@@ -63,6 +84,19 @@ func IsFailedOrderStatus(status any) bool {
 // IsRefundedOrderStatus reports whether status (see OrderStatusCode) is in RefundedOrderStatuses.
 func IsRefundedOrderStatus(status any) bool {
 	return hasOrderStatus(RefundedOrderStatuses, status)
+}
+
+// IsDirectCapturedOrderStatus reports whether status (see OrderStatusCode) is a
+// normal VPOS capture.
+func IsDirectCapturedOrderStatus(status any) bool {
+	return hasOrderStatus(DirectCapturedOrderStatuses, status)
+}
+
+// IsMarketplaceCapturedOrderStatus reports whether status (see OrderStatusCode)
+// is a marketplace capture, including an order whose submerchant payouts are
+// still open.
+func IsMarketplaceCapturedOrderStatus(status any) bool {
+	return hasOrderStatus(MarketplaceCapturedOrderStatuses, status)
 }
 
 func hasOrderStatus(group []int, status any) bool {
