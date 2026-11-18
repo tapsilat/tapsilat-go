@@ -445,14 +445,6 @@ type OrderStatus struct {
 	FraudReview string `json:"fraud_review,omitempty"`
 }
 
-const (
-	// FraudReviewPending: the order is held for fraud review; payments are refused until it is decided.
-	FraudReviewPending = "pending"
-	// FraudReviewApproved: the review approved the payment; one more attempt with the same card,
-	// customer, amount and fraud metadata is allowed. Approval is not collection.
-	FraudReviewApproved = "approved"
-)
-
 type RefundOrder struct {
 	ReferenceID string  `json:"reference_id"`
 	Amount      float64 `json:"amount"`
