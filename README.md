@@ -354,35 +354,31 @@ Use `GetMarketplacePayoutOperation` to read a receipt. For a timeout or lost res
 
 The provider constraints are described in the official [iyzico approval documentation](https://docs.iyzico.com/en/products/marketplace/marketplace-implementation/approval), [iyzico item update documentation](https://docs.iyzico.com/en/products/marketplace/marketplace-implementation/submerchant/alt-uye-sorgulama-1) and [PayTR transfer documentation](https://dev.paytr.com/platform-transfer-talebi/transfer-talimatinin-verilmesi).
 
-### Order with Booking Context
+### Order with Fraud Metadata
 
-Send the reservation an order pays for. Card payments of the order are screened for fraud with it. Orders without `Booking` behave as before.
+Send sector data that card fraud screening should see (a reservation, a vehicle class, an event date) as order metadata with the `fraud.` prefix. `FraudMetadata` adds the prefix. Other metadata is not sent to screening.
 
 ```go
-guests, refundable := int32(2), false
 order := tapsilat.Order{
 	Amount:   2500,
 	Currency: "TRY",
 	Locale:   "tr",
 	Buyer:    buyer,
-	Booking: &tapsilat.OrderBooking{
-		BookingReference: "BK-2026-104233", // required; the same for every payment of the reservation
-		BookingType:      "hotel",          // hotel, flight, car_rental, tour, event
-		BookingChannel:   "web",            // web, mobile_app, ota, call_center
-		PropertyCountry:  "TR",
-		CheckInDate:      "2026-12-20",
-		CheckOutDate:     "2026-12-23",
-		GuestName:        "Ayse Yilmaz",
-		GuestCount:       &guests,
-		IsRefundable:     &refundable,
-		BookingTotal:     "12500.00", // order currency, taxes and fees included; not below the order amount
-	},
+	Metadata: tapsilat.FraudMetadata(map[string]string{
+		"booking_reference": "BK-2026-104233", // the same for every payment of the reservation
+		"booking_type":      "hotel",
+		"check_in_date":     "2026-12-20", // YYYY-MM-DD
+		"check_out_date":    "2026-12-23",
+		"guest_name":        "Ayse Yilmaz",
+		"guest_count":       "2",
+		"booking_total":     "12500.00",
+	}),
 }
 ```
 
-An invalid booking is rejected with `ORDER_CREATE_INVALID_BOOKING`. The booking is fixed at creation; a changed reservation is a new order.
+Names after `fraud.` match `^[a-z][a-z0-9_]{0,63}$`. An order carries at most 50 of them, each once, with values up to 512 characters; otherwise it is rejected with `ORDER_CREATE_INVALID_FRAUD_METADATA`. Changing the data means a new order, which is screened again.
 
-`GetOrderStatus` returns `FraudReview`: `FraudReviewPending` while the order is held for review (payments are refused), `FraudReviewApproved` when one more attempt with the same card, customer, amount and booking is allowed, and empty otherwise.
+`GetOrderStatus` returns `FraudReview`: `FraudReviewPending` while the order is held for review (payments are refused), `FraudReviewApproved` when one more attempt with the same card, customer, amount and fraud metadata is allowed, and empty otherwise.
 
 ### Order with Payment Terms (Installments)
 

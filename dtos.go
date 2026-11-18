@@ -151,31 +151,6 @@ type Order struct {
 	OrderCards      []OrderCard           `json:"order_cards,omitempty"`
 	SubOrganization *OrderSubOrganization `json:"sub_organization,omitempty"`
 	OrderVposID     string                `json:"order_vpos_id,omitempty"`
-	// Booking is the reservation the order pays for; it is screened for fraud on card payments.
-	Booking *OrderBooking `json:"booking,omitempty"`
-}
-
-// OrderBooking describes a reservation. BookingReference is required when Booking is set;
-// it identifies the reservation across all of its payments and is not the order reference.
-type OrderBooking struct {
-	BookingReference string `json:"booking_reference"`
-	// BookingType is hotel, flight, car_rental, tour or event.
-	BookingType string `json:"booking_type,omitempty"`
-	// BookingChannel is web, mobile_app, ota or call_center.
-	BookingChannel string `json:"booking_channel,omitempty"`
-	// PropertyCountry is an upper-case ISO 3166-1 alpha-2 code.
-	PropertyCountry string `json:"property_country,omitempty"`
-	// CheckInDate and CheckOutDate are YYYY-MM-DD; check-out must be after check-in.
-	CheckInDate  string `json:"check_in_date,omitempty"`
-	CheckOutDate string `json:"check_out_date,omitempty"`
-	GuestName    string `json:"guest_name,omitempty"`
-	// GuestCount and RoomCount are 1-1000; nil leaves them unset.
-	GuestCount   *int32 `json:"guest_count,omitempty"`
-	RoomCount    *int32 `json:"room_count,omitempty"`
-	IsRefundable *bool  `json:"is_refundable,omitempty"`
-	// BookingTotal is a decimal string in the order currency, including taxes and fees.
-	// The order amount may not exceed it.
-	BookingTotal string `json:"booking_total,omitempty"`
 }
 
 // OrderConsent is a consent text the buyer must accept on the checkout page.
@@ -262,8 +237,6 @@ type OrderDetail struct {
 	PaymentRequests      []OrderPaymentRequest      `json:"payment_requests"`
 	RefundCancelRequests []OrderRefundCancelRequest `json:"refund_cancel_requests"`
 	CustomerPaidAmount   float64                    `json:"customer_paid_amount"`
-	// Booking is returned to the order's organization and its buyer.
-	Booking *OrderBooking `json:"booking,omitempty"`
 	// Deprecated: the merchant category code is returned per basket item.
 	MCC string `json:"mcc" example:"5411"`
 }
@@ -476,7 +449,7 @@ const (
 	// FraudReviewPending: the order is held for fraud review; payments are refused until it is decided.
 	FraudReviewPending = "pending"
 	// FraudReviewApproved: the review approved the payment; one more attempt with the same card,
-	// customer, amount and booking is allowed. Approval is not collection.
+	// customer, amount and fraud metadata is allowed. Approval is not collection.
 	FraudReviewApproved = "approved"
 )
 
