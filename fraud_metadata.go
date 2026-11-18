@@ -1,6 +1,7 @@
 package tapsilat
 
 import (
+	"encoding/json"
 	"maps"
 	"slices"
 )
@@ -17,4 +18,14 @@ func FraudMetadata(attributes map[string]string) []OrderMetadata {
 		metadata = append(metadata, OrderMetadata{Key: FraudMetadataPrefix + name, Value: attributes[name]})
 	}
 	return metadata
+}
+
+// FraudItemData returns basket item Data that carries attributes for fraud screening of that item, such as one
+// booking of an order that pays several. Same name and size rules as FraudMetadata; at most 50 items per order.
+func FraudItemData(attributes map[string]string) (string, error) {
+	data, err := json.Marshal(map[string]map[string]string{"fraud": attributes})
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }

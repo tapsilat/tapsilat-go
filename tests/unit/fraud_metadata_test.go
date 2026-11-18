@@ -34,3 +34,13 @@ func TestOrderStatusFraudReviewJSON(t *testing.T) {
 	require.NoError(t, json.Unmarshal([]byte(`{"status":"Paid"}`), &paid))
 	require.Empty(t, paid.FraudReview)
 }
+
+func TestFraudItemData(t *testing.T) {
+	data, err := tapsilat.FraudItemData(map[string]string{"booking_reference": "BK-1", "check_in_date": "2026-12-20"})
+	require.NoError(t, err)
+	require.JSONEq(t, `{"fraud":{"booking_reference":"BK-1","check_in_date":"2026-12-20"}}`, data)
+
+	body, err := json.Marshal(tapsilat.OrderBasketItem{Id: "hotel-1", Data: data})
+	require.NoError(t, err)
+	require.Contains(t, string(body), `"data":"{\"fraud\":{`)
+}

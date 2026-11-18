@@ -376,7 +376,19 @@ order := tapsilat.Order{
 }
 ```
 
-Names after `fraud.` match `^[a-z][a-z0-9_]{0,63}$`. An order carries at most 50 of them, each once, with values up to 512 characters; otherwise it is rejected with `ORDER_CREATE_INVALID_FRAUD_METADATA`. Changing the data means a new order, which is screened again.
+When one order pays several bookings, put each booking's data on its basket item with `FraudItemData`. Each item is screened on its own, with its data over the order's `fraud.` metadata; order-wide facts such as `booking_channel` stay in metadata.
+
+```go
+hotel, _ := tapsilat.FraudItemData(map[string]string{"booking_reference": "BK-1", "check_in_date": "2026-12-20"})
+car, _ := tapsilat.FraudItemData(map[string]string{"booking_reference": "CR-9", "booking_type": "car_rental"})
+order.Metadata = tapsilat.FraudMetadata(map[string]string{"booking_channel": "web"})
+order.BasketItems = []tapsilat.OrderBasketItem{
+	{Id: "hotel-1", Name: "Hotel", Price: 2000, Data: hotel},
+	{Id: "car-1", Name: "Car rental", Price: 500, Data: car},
+}
+```
+
+Names after `fraud.` `^[a-z][a-z0-9_]{0,63}$`. An order carries at most 50 of them, each once, with values up to 512 characters, and the same holds for each basket item's data (at most 50 items); otherwise it is rejected with `ORDER_CREATE_INVALID_FRAUD_METADATA`. Changing the data means a new order, which is screened again.
 
 `GetOrderStatus` returns `FraudReview`: `FraudReviewPending` while the order is held for review (payments are refused), `FraudReviewApproved` when one more attempt with the same card, customer, amount and fraud metadata is allowed, and empty otherwise.
 
