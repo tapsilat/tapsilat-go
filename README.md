@@ -354,6 +354,44 @@ Use `GetMarketplacePayoutOperation` to read a receipt. For a timeout or lost res
 
 The provider constraints are described in the official [iyzico approval documentation](https://docs.iyzico.com/en/products/marketplace/marketplace-implementation/approval), [iyzico item update documentation](https://docs.iyzico.com/en/products/marketplace/marketplace-implementation/submerchant/alt-uye-sorgulama-1) and [PayTR transfer documentation](https://dev.paytr.com/platform-transfer-talebi/transfer-talimatinin-verilmesi).
 
+### Order with Fraud Metadata
+
+Send sector data that card fraud screening should see (a reservation, a vehicle class, an event date) as order metadata with the `fraud.` prefix. `FraudMetadata` adds the prefix. Other metadata is not sent to screening.
+
+```go
+order := tapsilat.Order{
+	Amount:   2500,
+	Currency: "TRY",
+	Locale:   "tr",
+	Buyer:    buyer,
+	Metadata: tapsilat.FraudMetadata(map[string]string{
+		"booking_reference": "BK-2026-104233", // the same for every payment of the reservation
+		"booking_type":      "hotel",
+		"check_in_date":     "2026-12-20", // YYYY-MM-DD
+		"check_out_date":    "2026-12-23",
+		"guest_name":        "Ayse Yilmaz",
+		"guest_count":       "2",
+		"booking_total":     "12500.00",
+	}),
+}
+```
+
+When one order pays several bookings, put each booking's data on its basket item with `FraudItemData`. Each item is screened on its own, with its data over the order's `fraud.` metadata; order-wide facts such as `booking_channel` stay in metadata.
+
+```go
+hotel, _ := tapsilat.FraudItemData(map[string]string{"booking_reference": "BK-1", "check_in_date": "2026-12-20"})
+car, _ := tapsilat.FraudItemData(map[string]string{"booking_reference": "CR-9", "booking_type": "car_rental"})
+order.Metadata = tapsilat.FraudMetadata(map[string]string{"booking_channel": "web"})
+order.BasketItems = []tapsilat.OrderBasketItem{
+	{Id: "hotel-1", Name: "Hotel", Price: 2000, Data: hotel},
+	{Id: "car-1", Name: "Car rental", Price: 500, Data: car},
+}
+```
+
+Names after `fraud.` `^[a-z][a-z0-9_]{0,63}$`. An order carries at most 50 of them, each once, with values up to 512 characters, and the same holds for each basket item's data (at most 50 items); otherwise it is rejected with `ORDER_CREATE_INVALID_FRAUD_METADATA`. Changing the data means a new order, which is screened again.
+
+`GetOrderStatus` returns `FraudReview`: `FraudReviewPending` while the order is held for review (payments are refused), `FraudReviewApproved` when one more attempt with the same card, customer, amount and fraud metadata is allowed, and empty otherwise.
+
 ### Order with Payment Terms (Installments)
 
 ```go

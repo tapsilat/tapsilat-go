@@ -7,6 +7,14 @@ import (
 	"strings"
 )
 
+const (
+	// FraudReviewPending: the order is held for fraud review; payments are refused until it is decided.
+	FraudReviewPending = "pending"
+	// FraudReviewApproved: the review approved the payment; one more attempt with the same card,
+	// customer, amount and fraud metadata is allowed. Approval is not collection.
+	FraudReviewApproved = "approved"
+)
+
 // PaidOrderStatuses are the statuses of an order that is paid and has no open
 // marketplace payout. A marketplace card capture whose submerchant payouts are
 // still open is OrderStatusStillHasUnpaidSubMerchantPayments; use

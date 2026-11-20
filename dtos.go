@@ -441,6 +441,8 @@ type OrderResponse struct {
 type OrderStatus struct {
 	Status string `json:"status"`
 	Error  string `json:"error"`
+	// FraudReview is one of the FraudReview* constants, or empty when no review applies.
+	FraudReview string `json:"fraud_review,omitempty"`
 }
 
 type RefundOrder struct {
